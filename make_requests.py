@@ -12,20 +12,34 @@ def make_users(n, file_name):
 	only ever use this ONCE!
 	'''
 	ids = random.sample(range(30000000), n)
-	f = file(file_name,'w')
+	to_mod = "tomod" + file_name
+	original = file(file_name,'w')
+	copy = file(to_mod, 'w')
 	for user_id in ids:
-		f.write("%s\n" % user_id)
-	f.close()
+		original.write("%s\n" % user_id)
+		copy.write("%s\n" % user_id)
+	original.close()
+	copy.close()
 
 
-def user_list(file_name):
+
+def user_list(file_name, remove = False):
 	'''
 	opens user file and builds a python list containing all
 	user therin
 	'''
-	f = file(file_name)
+	f = file(file_name, 'r')
 	ids = f.read().splitlines()
+	f.close()
+	if remove:
+		f = file(file_name, 'w')
+		for u_id in ids[1:]:
+			f.write("%s\n" % u_id)
+		f.close()
+		return
 	return ids
+
+
 
 def too_many():
 	''' 
@@ -35,7 +49,7 @@ def too_many():
 	'''
 	global requests_count
 	if requests_count >= 5:
-		print 'sleeping for 1.2 seconds because count was too high'
+		print 'ZzzzZzz''
 		time.sleep(1.2)
 		requests_count = 0
 	else:
@@ -65,7 +79,6 @@ def get(user_id):
 			info = requests.get('http://ws.audioscrobbler.com/2.0/', params = payload)
 		except (requests.exceptions):
 			results = None
-			print "******* error in request ******  ", info
 			# if there was an error in the request, 
 			# break out of calls and return none
 			break
@@ -122,21 +135,30 @@ def write_to_db(user_info):
 	collection.insert(user_info) 
 	
 def main():
-	ids = user_list('users.txt')
-	for user_id in ids:
+	# create a list of ids to iterate through
+	ids = user_list('tomodusers.txt')
+	for i in range(len(ids)):
+		user_id = ids[i]
+		print 'currently on iteration' + str(i) + ' ' + str(float(i)/len(ids)) + '%'
+		print "getting info for " + str(user_id)
+		f = file('log_file', 'a')
 		too_many()
-		print 'looking up user ' + str(user_id)
+		f.write('looking up user ' + str(user_id))
+		f.write('\n')
 		info = get(user_id = user_id)
 		if info:
-			print 'writing info to database'
+			f.write('writing info to database')
+			f.write('\n')
 			write_to_db(user_info = info)
-
 		else:
-			print 'error in user info'
-
-
+			f.write('not added due to error in user info')
+			f.write('\n')
+		# remove the user from the file
+		user_list('tomodusers.txt', remove = True)
+		f.close()
 
 if __name__ == "__main__":
+	make_users(60, 'users.txt')
 	main()
 
 
