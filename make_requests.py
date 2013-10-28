@@ -54,7 +54,8 @@ def get(user_id):
 	# make the api calls
 	for call in api_calls:
 		# customize url with payload
-		payload = {'user': str(user_id),'method':call, 
+		payload = {'user': 
+		(user_id),'method':call, 
 		'api_key':'872d9492f0b60d20c8f230faef15cc00', 'format':'json'}
 		if call == 'user.gettopartists':
 			payload['limit'] = '5'
@@ -85,7 +86,7 @@ def get(user_id):
 			try:
 				# get the artist info
 				info_list = info.json()['topartists']['artist']
-				if type(info_list) == str
+				if isinstance(info_list, dict):
 					# if the artist info only contains one artist, turn it into
 					# an interable
 					info_list = [info_list]
@@ -109,6 +110,7 @@ def get(user_id):
 				results['top_artists'] = []
 		else:
 			results[call.split('.')[1]] = info.json()
+	return results
 
 def write_to_db(user_info):
 	'''
@@ -125,9 +127,10 @@ def main():
 		too_many()
 		print 'looking up user ' + str(user_id)
 		info = get(user_id = user_id)
-		if results:
-			'writing info to database'
+		if info:
+			print 'writing info to database'
 			write_to_db(user_info = info)
+
 		else:
 			print 'error in user info'
 
