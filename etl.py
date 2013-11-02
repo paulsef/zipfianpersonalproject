@@ -36,7 +36,7 @@ def from_json(filepath):
 	dictionaries = [json.loads(line) for line in f.readlines()]
 	return dictionaries
 
-def flatten_user_info(entry):
+def flatten_userinfo(entry):
 	'''
 	takes an entry and flattens the user information
 	returns a a flattened dictionary
@@ -46,7 +46,6 @@ def flatten_user_info(entry):
 	raw_info = [info_dict[i] for i in info_dict.keys()]
 	for key in info_dict:
 		if key == 'image':
-			pdb.set_trace()
 			mask = [False if i == '' else True for i in [im['#text'] for im in info_dict['image']]]
 			info_dict[key] = np.any(mask)
 		if key == 'registered':
@@ -62,9 +61,9 @@ def flatten_recenttracks(entry):
 	try:
 		track_list = entry['getrecenttracks']['recenttracks']['track']
 		if not isinstance(track_list, list):
-			track_list = list(track_list)
+			track_list = [track_list]
 		for t in track_list:
-			artist.append(t['artist']['#text'])
+			artists.append(t['artist']['#text'])
 			tracks.append(t['name'])
 			dates.append(t['date']['uts'])
 		num_nones = 5 - len(track_list)
@@ -83,13 +82,13 @@ def flatten_topartist(entry):
 	counts = []
 	try:
 		artist_list = entry['top_artists']['topartists']['artist']
-		if not isinstance(artists_list, list):
-			artists_list = list(artists_list)
+		if not isinstance(artist_list, list):
+			artist_list = [artist_list]
 		for a in artist_list:
 			artists.append(a['name'])
 			counts.append(a['playcount'])
 		num_nones = 5 - len(artist_list)
-	except(KeyError):
+	except(TypeError):
 		num_nones = 5
 	if num_nones > 0:
 		for i in range(num_nones):
@@ -108,6 +107,42 @@ def flatten_friends(entry):
 	except(KeyError):
 		num_friends = 0
 	entry['getfriends'] = num_friends
+	return entry
+
+def flatten_events(entry):
+	try:
+		event_list = entry['getevents']['events']['event']
+		if isinstance(event_list, list):
+			num_events = len(event_list)
+		else:
+			num_events = 1
+	except(KeyError):
+		num_events = 0
+	entry['getevents'] = num_events
+	return entry
+
+def flatten_toptags(entry):
+	tags = entry['top_tags']
+	num_nones = 5 - len(tags)
+	for i in range(num_nones):
+		tags.append(None)
+	entry['getTopTags'] = tags
+	return entry
+
+
+def main():
+	docs = from_json('jsonout/0.json')
+	for doc in docs:
+		flatten_toptags(doc)
+		flatten_events(doc)
+		flatten_friends(doc)
+		flatten_topartist(doc)
+		flatten_userinfo(doc)
+		flatten_recenttracks(doc)
+	return docs
+
+
+
 
 
 
@@ -116,5 +151,6 @@ def flatten_friends(entry):
 
 if __name__ == '__main__' :
 	to_json()
+
 
 
