@@ -30,7 +30,7 @@ def to_json():
 
 def from_json(filepath):
 	''' 
-	takes a json file and converts it to 
+	takes a json file and converts it to dictionaries
 	'''
 	f = open(filepath)
 	dictionaries = [json.loads(line) for line in f.readlines()]
@@ -66,9 +66,9 @@ def flatten_recenttracks(entry):
 			artists.append(t['artist']['#text'])
 			tracks.append(t['name'])
 			dates.append(t['date']['uts'])
-		num_nones = 5 - len(track_list)
+		num_nones = 10 - len(track_list)
 	except(KeyError):
-		num_nones = 5
+		num_nones = 10
 	if num_nones > 0:
 		for i in range(num_nones):
 			artists.append(None)
@@ -139,6 +139,7 @@ def main():
 		flatten_topartist(doc)
 		flatten_userinfo(doc)
 		flatten_recenttracks(doc)
+		del doc['getTopTags']
 	return docs
 
 
@@ -150,7 +151,9 @@ def main():
 
 
 if __name__ == '__main__' :
-	to_json()
+	#to_json()
+	pass
+
 
 
 
