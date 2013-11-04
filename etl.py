@@ -1,7 +1,8 @@
-from pymongo import MongoClient
 import numpy as np
 import pandas as pd
+import os
 import json
+from pymongo import MongoClient
 import pdb
 
 
@@ -43,20 +44,30 @@ def flatten_userinfo(entry, master):
 	returns a a flattened dictionary
 	'''
 	info_dict = entry['getinfo']['user']
+	# convert to proper data types
+	if info_dict['country'] == '':
+		info_dict['country'] = None
+	if info_dict['gender'] == 'n':
+		info_dict['gender'] = None
 	if info_dict['age'] == '':
-		info_dict['age'] = None
+		info_dict['age'] = None	
 	else:
 		info_dict['age'] = int(info_dict['age'])
-	if info_dict['country'] = '':
-		info_dict['country'] = None
+	for key in ['subscriber','playcount', 'playlists']:
+		info_dict[key] = int(info_dict[key])
 	info_dict['subscriber'] = int(info_dict['subscriber'])
-	#info_dict['age'] = int(info_dict['age']) if not info_dict == '' else None
+	info_dict['playcount'] = int(info_dict['subscriber'])
 	for key in info_dict:
+		# convert image info to bool
 		if key == 'image':
 			mask = [False if i == '' else True for i in [im['#text'] for im in info_dict['image']]]
 			info_dict[key] = np.any(mask)
+		# get the text version of timestamp	
 		if key == 'registered':
 			info_dict[key] = info_dict[key]['#text']
+	# delte irrelevant thingssss
+	for delete in ['name', 'type','url','bootstrap','realname']:	
+		del info_dict[delete]
 	master.update(info_dict)
 	return master
 
@@ -74,7 +85,7 @@ def flatten_recenttracks(entry, master):
 			tracks.append(t['name'])
 			dates.append(t['date']['#text'])
 		num_nones = 10 - len(track_list)
-	except(KeyError):
+	except(KeyError, TypeError):
 		num_nones = 10
 	if num_nones > 0:
 		for i in range(num_nones):
@@ -162,44 +173,34 @@ def flatten_toptags(entry, master):
 	#return entry
 	return master
 
-def create_df(master):
-	row_ids = master.keys()
-	rows = [master[key] for key in master]
 
-	df = pd.DataFrame(rows, index = row_ids)
-	return df
-
-
-
-def main():
-	docs = from_json('jsonout/0.json')
-	super_master = {}
+def main(infile):
+	'''
+	takes a json file and returns a data pandas DataFrame
+	'''
+	docs = from_json(infile)
+	super_master = []
 	for doc in docs:
 		master = {}
-		uid = doc['getinfo']['user']['id']
 		flatten_toptags(doc, master)
 		flatten_events(doc, master)
 		flatten_friends(doc, master)
 		flatten_topartist(doc, master)
 		flatten_userinfo(doc, master)
 		flatten_recenttracks(doc, master)
-		super_master[uid] = master
-	pd.DataFrame()
-	for key in super_master:
-		super_master[key]
-	return super_master
-
-
-
-
+		super_master.append(master)
+	df = pd.DataFrame(super_master)
+	return df
 
 
 
 
 
 if __name__ == '__main__' :
-	#to_json()
-	pass
+	for filename in os.listdir('jsonout'):
+		df = main('jsonout/' + filename)
+		outfilename = filename.split('.')[0] + '.ssv'
+		df.to_csv('ssvout/' + outfilename, sep = '*', encoding = 'utf-8', index = False, na_rep = "None")
 
 
 
