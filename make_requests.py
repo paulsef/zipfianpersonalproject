@@ -13,7 +13,7 @@ def make_users(n, file_name):
 	creates a list of n random ids and writes them to a file
 	only ever use this ONCE!
 	'''
-	ids = random.sample(range(30000000), n)
+	ids = random.sample(range(56401999), n)
 	to_mod = "tomod" + file_name
 	original = file(file_name,'w')
 	copy = file(to_mod, 'w')
@@ -66,7 +66,6 @@ def get(user_id):
 	'user.gettopartists', 'user.getevents','user.getTopTags']
 	# initialize dictionary of results with the user id as _id for mongo
 	results = {}
-	results['_id'] = user_id
 	# make the api calls
 	for call in api_calls:
 		# customize url with payload
@@ -86,8 +85,9 @@ def get(user_id):
 			break
 		try:
 			info.json()
-		except(ValueError):
+		except(ValueError, JSONDecodeError):
 			results = "something strange happened"
+			break
 		# skip if user_id was invalid
 		if call == 'user.getinfo':
 			if 'error' in info.json().keys():
@@ -96,7 +96,21 @@ def get(user_id):
 				results = None
 				break
 			else:
-				new_id = info.json()['user']['name'] 
+				client = MongoClient()
+				db = client.test
+				collection = db.test
+				new_id = info.json()['user']['id']
+				user_id = new_id
+				if collection.find({'_id':new_id}).count() > 0:
+					print 'breaking because we already saw this user'
+					results = 'user already exists in db'
+					break
+				if info.json()['user']['subscriber'] == "0":
+					print 'skipping to next user for better science'
+					results = 'user is not a subsciber'
+					break
+				else:
+					results['_id'] = user_id
 		elif call == 'user.gettopartists':
 			# if the call was get top artists, iterate through the top artists
 			# and get the first top tag
@@ -145,12 +159,15 @@ def write_to_db(user_info):
 	
 def main():
 	# create a list of ids to iterate through
-	timeout = time.time() + 60*5
-	while True:
+	timeout = time.time() + 120
+	ids = range(11)
+	while len(ids) > 10:
+		print '********* fueling the fire ********'
 		newsubs.main()
 		ids = user_list('tomodusers.txt')
 		for i in range(len(ids)):
 			if time.time() > timeout:
+				timeout = time.time() + 120
 				break
 			user_id = ids[i]
 			print "getting info for " + str(user_id) + ' on iteration ' + str(i) + ' ' + str(float(i)/len(ids)*100) + '%'
@@ -161,7 +178,7 @@ def main():
 			info = get(user_id = user_id)
 			if info:
 				if isinstance(info, str):
-					f.write('something went wrong')
+					f.write(info)
 					f.write('\n')
 				else:
 					f.write('writing info to database')

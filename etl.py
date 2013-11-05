@@ -24,6 +24,7 @@ def to_json():
 	path = 'jsonout/' 
 	for i in range(doc_count):
 		if i%5000 == 0:
+			print i
 			f_name = str(i) + '.json'
 		f = open(path + f_name, 'a')
 		json.dump(documents[i],f)
@@ -56,7 +57,6 @@ def flatten_userinfo(entry, master):
 	for key in ['subscriber','playcount', 'playlists']:
 		info_dict[key] = int(info_dict[key])
 	info_dict['subscriber'] = int(info_dict['subscriber'])
-	info_dict['playcount'] = int(info_dict['subscriber'])
 	for key in info_dict:
 		# convert image info to bool
 		if key == 'image':
