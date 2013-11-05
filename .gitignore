@@ -1,3 +1,6 @@
 .Rhistory
 *.pyc
 .DS_Store
+log_file
+tomodusers.txt
+users.txt

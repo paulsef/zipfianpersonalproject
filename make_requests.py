@@ -1,8 +1,10 @@
 import random
 import requests
 import time
-from pymongo import MongoClient
+import time
 import pdb
+from pymongo import MongoClient
+import newsubs
 
 requests_count = 0
 
@@ -87,11 +89,14 @@ def get(user_id):
 		except(ValueError):
 			results = "something strange happened"
 		# skip if user_id was invalid
-		if call == 'user.getinfo' and 'error' in info.json().keys():
-			# if there was an error from last.fm
-			# break out of calls and return none
-			results = None
-			break
+		if call == 'user.getinfo':
+			if 'error' in info.json().keys():
+				# if there was an error from last.fm
+				# break out of calls and return none
+				results = None
+				break
+			else:
+				new_id = info.json()['user']['name'] 
 		elif call == 'user.gettopartists':
 			# if the call was get top artists, iterate through the top artists
 			# and get the first top tag
@@ -140,29 +145,34 @@ def write_to_db(user_info):
 	
 def main():
 	# create a list of ids to iterate through
-	ids = user_list('tomodusers.txt')
-	for i in range(len(ids)):
-		user_id = ids[i]
-		print "getting info for " + str(user_id) + ' on iteration ' + str(i) + ' ' + str(float(i)/len(ids)*100) + '%'
-		f = file('log_file', 'a')
-		too_many('user_id lookup')
-		f.write('looking up user ' + str(user_id))
-		f.write('\n')
-		info = get(user_id = user_id)
-		if info:
-			if isinstance(info, str):
-				f.write('something went wrong')
-				f.write('\n')
-			else:
-				f.write('writing info to database')
-				f.write('\n')
-				write_to_db(user_info = info)
-		else:
-			f.write('not added due to error in user info')
+	timeout = time.time() + 60*5
+	while True:
+		newsubs.main()
+		ids = user_list('tomodusers.txt')
+		for i in range(len(ids)):
+			if time.time() > timeout:
+				break
+			user_id = ids[i]
+			print "getting info for " + str(user_id) + ' on iteration ' + str(i) + ' ' + str(float(i)/len(ids)*100) + '%'
+			f = file('log_file', 'a')
+			too_many('user_id lookup')
+			f.write('looking up user ' + str(user_id))
 			f.write('\n')
-		# remove the user from the file
-		user_list('tomodusers.txt', remove = True)
-		f.close()
+			info = get(user_id = user_id)
+			if info:
+				if isinstance(info, str):
+					f.write('something went wrong')
+					f.write('\n')
+				else:
+					f.write('writing info to database')
+					f.write('\n')
+					write_to_db(user_info = info)
+			else:
+				f.write('not added due to error in user info')
+				f.write('\n')
+			# remove the user from the file
+			user_list('tomodusers.txt', remove = True)
+			f.close()
 
 if __name__ == "__main__":
 	main()
