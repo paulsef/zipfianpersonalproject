@@ -193,9 +193,6 @@ def main(infile):
 	return df
 
 
-
-
-
 if __name__ == '__main__' :
 	for filename in os.listdir('jsonout'):
 		df = main('jsonout/' + filename)
