@@ -68,7 +68,7 @@ def flatten_userinfo(entry, master):
 			info_dict[key] = np.any(mask)
 		# get the text version of timestamp	
 		if key == 'registered':
-			info_dict[key] = info_dict[key]['#text']
+			info_dict[key] = info_dict[key]['unixtime']
 	# delte irrelevant thingssss
 	for delete in ['name', 'type','url','bootstrap','realname']:	
 		del info_dict[delete]
@@ -87,7 +87,7 @@ def flatten_recenttracks(entry, master):
 		for t in track_list:
 			artists.append(t['artist']['#text'])
 			tracks.append(t['name'])
-			dates.append(t['date']['#text'])
+			dates.append(t['date']['uts'])
 		num_nones = 10 - len(track_list)
 	except(KeyError, TypeError):
 		num_nones = 10
@@ -196,15 +196,22 @@ def main(infile):
 			super_master.append(master)
 		except(KeyError):
 			continue
+		for key in master:
+			if isinstance(master[key], unicode):
+				master[key] = master[key].encode('ascii','replace')
+				if ',' in master[key]:
+					split = master[key].split(',')
+					master[key] = ''.join(split)
 	df = pd.DataFrame(super_master)
 	return df
 
 
 if __name__ == '__main__' :
 	for filename in os.listdir('jsonout'):
+		print filename
 		df = main('jsonout/' + filename)
 		outfilename = filename.split('.')[0] + '.ssv'
-		df.to_csv('ssvout/' + outfilename, sep = '*', encoding = 'utf-8', index = False, na_rep = "None")
+		df.to_csv('ssvout/' + outfilename, sep = ',',index = False, na_rep = "None")#encoding = 'utf-16'	
 
 
 
