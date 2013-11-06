@@ -52,3 +52,14 @@ ggplot(recent, aes(x = reg_recent_diff)) + geom_histogram() + scale_y_sqrt()
 # histrogram of playcounts
 ggplot(subscriber, aes(x = playcount + 1)) + geom_histogram() + scale_x_log10()
 ggplot(user, aes(x = playcount + 1)) + geom_histogram() + scale_x_log10()
+
+model <- dcom[dcom$playcount > 2,c('playcount', 'subscriber') ]
+#model$tag1 <- factor(model$tag1)
+m <- glm(subscriber ~ playcount, data = model, family = 'binomial')
+
+sub_agg <- aggregate(top_count1 ~ tag1, data = subscriber, FUN = mean)
+use_agg <- aggregate(top_count1 ~ tag1, data = user, FUN = mean)
+melted_agg <- melt(merge(sub_agg, use_agg, by = 'tag1', all = TRUE), id= 'tag1')
+melted_agg[is.na(melted_agg)] <- 0
+ggplot(melted_agg) + aes(x = melted_agg$tag1, y = melted_agg$value, fill = melted_agg$variable) + 
+  geom_bar(stat='identity',position = 'dodge') + theme(axis.text.x = element_text(angle = 90, hjust = 1))
