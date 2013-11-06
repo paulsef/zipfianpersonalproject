@@ -5,3 +5,5 @@ log_file
 tomodusers.txt
 users.txt
 .ipynb_checkpoints/
+ssvout/
+jsonout/

@@ -111,6 +111,7 @@ def get(user_id):
 					break
 				else:
 					results['_id'] = user_id
+					results['getinfo'] = info.json()
 		elif call == 'user.gettopartists':
 			# if the call was get top artists, iterate through the top artists
 			# and get the first top tag
@@ -186,6 +187,8 @@ def main():
 					print new
 					f.write('writing info to database ' + str(new))
 					f.write('\n')
+					if len(info.keys()) != 8:
+						pdb.set_trace()
 					write_to_db(user_info = info)
 			else:
 				f.write('not added due to error in user info')
