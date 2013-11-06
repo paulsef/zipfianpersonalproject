@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 import os
 import json
 from pymongo import MongoClient
@@ -21,13 +22,16 @@ def connect():
 def to_json():
 	documents = connect()
 	doc_count = documents.count()
-	path = 'jsonout/' 
-	for i in range(doc_count):
+	path = 'jsonout/'
+	rand = random.sample(range(doc_count), doc_count)
+	i = 0
+	for random_index in rand:
+		i += 1
 		if i%5000 == 0:
 			print i
 			f_name = str(i) + '.json'
 		f = open(path + f_name, 'a')
-		json.dump(documents[i],f)
+		json.dump(documents[random_index],f)
 		f.write('\n')
 		f.close()
 
@@ -182,13 +186,16 @@ def main(infile):
 	super_master = []
 	for doc in docs:
 		master = {}
-		flatten_toptags(doc, master)
-		flatten_events(doc, master)
-		flatten_friends(doc, master)
-		flatten_topartist(doc, master)
-		flatten_userinfo(doc, master)
-		flatten_recenttracks(doc, master)
-		super_master.append(master)
+		try:
+			flatten_toptags(doc, master)
+			flatten_events(doc, master)
+			flatten_friends(doc, master)
+			flatten_topartist(doc, master)
+			flatten_userinfo(doc, master)
+			flatten_recenttracks(doc, master)
+			super_master.append(master)
+		except(KeyError):
+			continue
 	df = pd.DataFrame(super_master)
 	return df
 

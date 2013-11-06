@@ -78,14 +78,14 @@ def get(user_id):
 			# get user info
 			too_many(call)
 			info = requests.get('http://ws.audioscrobbler.com/2.0/', params = payload)
-		except (requests.exceptions):
+		except (requests.exceptions, requests.exceptions.ConnectionError):
 			results = None
 			# if there was an error in the request, 
 			# break out of calls and return none
 			break
 		try:
 			info.json()
-		except(ValueError, JSONDecodeError):
+		except(ValueError):
 			results = "something strange happened"
 			break
 		# skip if user_id was invalid
@@ -161,6 +161,7 @@ def main():
 	# create a list of ids to iterate through
 	timeout = time.time() + 120
 	ids = range(11)
+	new = 0
 	while len(ids) > 10:
 		print '********* fueling the fire ********'
 		newsubs.main()
@@ -181,7 +182,9 @@ def main():
 					f.write(info)
 					f.write('\n')
 				else:
-					f.write('writing info to database')
+					new += 1
+					print new
+					f.write('writing info to database ' + str(new))
 					f.write('\n')
 					write_to_db(user_info = info)
 			else:
