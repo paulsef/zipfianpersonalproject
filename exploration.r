@@ -22,5 +22,18 @@ dcom$recent_date3 <- strptime("1970-01-01", "%Y-%m-%d", tz="UTC") + dcom$recent_
 dcom$recent_date4 <- strptime("1970-01-01", "%Y-%m-%d", tz="UTC") + dcom$recent_date4
 dcom$recent_date5 <- strptime("1970-01-01", "%Y-%m-%d", tz="UTC") + dcom$recent_date5
 
-ggplot(dcom) + aes(x = dcom$registered, y = dcom$playcount, color = factor(dcom$subscriber)) + 
-  geom_point() #+ scale_colour_hue(l=100, c=100)
+sub1 <- dcom[dcom$playcount > 1,]
+ggplot(sub1) + aes(x = sub1$registered, y = sub1$playcount, color = factor(sub1$subscriber)) + 
+  geom_point() + scale_y_log10()#+ scale_colour_hue(l=100, c=100)
+ggplot(sub1) + aes(x = sub1$registered, y = sub1$age, color = factor(sub1$gender), 
+                   size = sub1$top_count1) + geom_point()
+
+sub2 <- dcom[dcom$subscriber == 1,]
+ggplot(sub2) + aes(x = sub2$registered, y = sub2$age, color = factor(sub2$gender), 
+                   size = sub2$top_count1) + geom_point()
+sum(is.na(sub2$gender))
+
+dcom$reg_recent_diff = as.numeric(dcom$recent_date1 -dcom$registered, units = "days")
+# what are people with NO recent tracks? nothing scrobbled ever?
+recent <- dcom[(dcom$reg_recent_diff < 1000)&(dcom$reg_recent_diff > 1)&(!is.na(dcom$reg_recent_diff)),]
+ggplot(recent, aes(x = reg_recent_diff)) + geom_histogram() + scale_y_sqrt()
