@@ -26,10 +26,10 @@ def to_json():
 	rand = random.sample(range(doc_count), doc_count)
 	i = 0
 	for random_index in rand:
-		i += 1
 		if i%5000 == 0:
 			print i
 			f_name = str(i) + '.json'
+		i += 1
 		f = open(path + f_name, 'a')
 		json.dump(documents[random_index],f)
 		f.write('\n')
