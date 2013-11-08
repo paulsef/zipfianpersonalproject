@@ -100,14 +100,9 @@ def encode(dataframe):
 	encoder = pickle.load(file('./encoder.pkl'))
 	encoded = pd.DataFrame(index = dataframe.index)
 	for col in dataframe:
-		#if col == 'age':
-		#	continue
-		pdb.set_trace()
 		print col
-		values = []
-		for value in dataframe[col]:
-			values.append(encoder.transform([value])[0])
-		endoed[col] = values
+		str_values = [str(i) for i in dataframe[col]]
+		encoded[col] = encoder.transform(str_values)
 	return encoded
 
 def buildmodel(encoded_df):
