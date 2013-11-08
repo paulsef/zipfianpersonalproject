@@ -91,22 +91,65 @@ def make_encoder():
 
 
 
-def encode(dataframe):
+def dencode(dataframe, decode = False):
 	'''
 	uses sklearn to encode all values as integers/floats
 	returns a dictionary containing sklearn encoding objects
 	and encoded data frame
 	'''
 	encoder = pickle.load(file('./encoder.pkl'))
-	encoded = pd.DataFrame(index = dataframe.index)
+	result = pd.DataFrame(index = dataframe.index)
 	for col in dataframe:
-		print col
-		str_values = [str(i) for i in dataframe[col]]
-		encoded[col] = encoder.transform(str_values)
-	return encoded
+		if decode:
+			result[col] = encoder.inverse_transform(dataframe[col])
+		else:
+			str_values = [str(i) for i in dataframe[col]]
+			result[col] = encoder.transform(str_values)
+	return result
 
-def buildmodel(encoded_df):
-	pass
+def growforest(encoded_df, num_trees, to_pickle = False):
+	encoded_target = encoded_df['subscriber']
+	encoded_training = encoded_df.drop('subscriber', axis = 1)
+	m = RandomForestClassifier(n_estimators=num_trees, oob_score=True)
+	mod = m.fit(encoded_training, encoded_target)
+	if to_pickle:
+		pickle.dump(mod, file('rfmodel.pkl'))
+		return
+	features = zip(mod.feature_importances_, encoded_df.columns)
+	features = sorted(features, reverse=True)#, key = lambda x:features[0])
+	return mod, features
+
+
+def make_predictions(dataframe, model = False):
+	'''
+	takes a data frame or a row from a data frame and 
+	predicts the outcome
+	'''
+	if not model:
+		model = pickle.load(file('rfmodel.pkl'))
+	solutions = dataframe['subscriber']
+	predictions = model.predict(dataframe.drop('subscriber', axis = 1))
+	return np.sum(solutions == predictions)*1.0/len(predictions)
+	#return solutions, predictions
+
+def data():
+	'''
+	loads in the data set
+	'''
+	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
+	#df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	#print sum(df1['subscriber'] == 1)
+	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	test = pd.read_csv('ssvout/5000.ssv', na_values='None')
+	df2 = scrub(df1)
+	test2 = scrub(test)
+	encoded = dencode(df2)
+	test_encoded = dencode(test2)
+	return encoded, test_encoded
+
+
 
 
 
