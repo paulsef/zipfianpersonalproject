@@ -43,6 +43,28 @@ def from_json(filepath):
 	dictionaries = [json.loads(line) for line in f.readlines()]
 	return dictionaries
 
+def graph(list_of_dicts):
+	f = file('graph.txt', 'a')
+	#w_friends = [i for i in list_of_dicts if len(i['getfriends']['friends'].keys()) < 5]
+	for doc in list_of_dicts:
+		try:
+			if 'user' not in doc['getfriends']['friends'].keys():
+				continue
+			friend_list = doc['getfriends']['friends']['user']
+		except(KeyError):
+			continue
+		if isinstance(friend_list, dict):
+			friend_list = [friend_list]
+		try:
+			for friend in friend_list:
+				text = str(doc['getinfo']['user']['id'] + '\t' + friend['id'])
+				f.write(text)
+				f.write('\n')
+		except(KeyError):
+			continue
+	f.close()
+
+
 def flatten_userinfo(entry, master):
 	'''
 	takes an entry and flattens the user information
@@ -139,10 +161,12 @@ def flatten_topartist(entry, master):
 def flatten_friends(entry, master):
 	try:
 		friend_list = entry['getfriends']['friends']['user']
-		if isinstance(friend_list, list):
-			num_friends = len(friend_list)
-		else:
-			num_friends = 1
+		if isinstance(friend_list, dict):
+			friend_list = [friend_list]
+		num_friends = len(friend_list)
+		pdb.set_trace()
+		friend_sub = len([i for i in friend_list if friend_list[i]['subscriber'] == 1])
+		for friend in friend_list:
 	except(KeyError):
 		num_friends = 0
 	#entry['getfriends'] = num_friends
@@ -208,10 +232,12 @@ def main(infile):
 
 if __name__ == '__main__' :
 	for filename in os.listdir('jsonout'):
-		print filename
-		df = main('jsonout/' + filename)
-		outfilename = filename.split('.')[0] + '.ssv'
-		df.to_csv('ssvout/' + outfilename, sep = ',',index = False, na_rep = "None")#encoding = 'utf-16'	
+		dict_list = from_json('jsonout/' + filename)
+		graph(dict_list)
+		# print filename
+		# df = main('jsonout/' + filename)
+		# outfilename = filename.split('.')[0] + '.ssv'
+		# df.to_csv('ssvout/' + outfilename, sep = ',',index = False, na_rep = "None")#encoding = 'utf-16'	
 
 
 

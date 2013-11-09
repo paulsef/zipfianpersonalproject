@@ -66,3 +66,6 @@ ggplot(user, aes(x = reg_recent_diff)) + geom_histogram() + scale_y_sqrt()
 
 ggplot(subscriber, aes(x = avg_diff)) + geom_histogram()
 ggplot(user, aes(x = avg_diff)) + geom_histogram()
+
+ggplot(dcom) + aes(x = rownames(dcom), y= dcom$top_count4, color = dcom$subscriber) +
+  geom_point() + scale_y_log10()
