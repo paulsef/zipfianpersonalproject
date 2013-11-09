@@ -7,14 +7,14 @@ df2 <- read.table('./ssvout/5000.ssv', header = TRUE, sep = ',', as.is = TRUE, n
                   comment.char = "", quote = "")
 df3 <- read.table('./ssvout/10000.ssv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
                   comment.char = "", quote = "")
-df4 <- read.table('./ssvout/15000.ssv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
-                  comment.char = "", quote = "")
+#df4 <- read.table('./ssvout/15000.ssv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
+#                  comment.char = "", quote = "")
 #df5 <- read.table('./ssvout/20000.ssv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
 #                  comment.char = "", quote = "")
 #df6 <- read.table('./ssvout/25000.ssv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
 #                  comment.char = "", quote = "")
 print(c(sum(df1$subscriber == 1),sum(df2$subscriber == 1),sum(df3$subscriber == 1),sum(df4$subscriber == 1)))
-dcom <- rbind(df1,df2,df3,d4)
+dcom <- rbind(df1,df2,df3)
 rm(df1,df2,df3,df4)
 print(sum(dcom$subscriber == 1))
 
