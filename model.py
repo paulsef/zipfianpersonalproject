@@ -12,7 +12,8 @@ def time(dataframe):
 	'''
 	converts columns to time
 	'''
-	time = ['registered','recent_date1','recent_date2','recent_date3','recent_date4','recent_date5']
+	time = ['registered','recent_date1','recent_date2','recent_date3',
+			'recent_date4','recent_date5']
 	for col in time:
 	    new_series = []
 	    hours = []
@@ -53,11 +54,14 @@ def drop(dataframe, dropcolumns):
 	d = d.iloc[d.iloc[:,8:].dropna().index,]
 	return d
 
-def scrub(dataframe):
+def scrub(dataframe, to_drop = None):
 	'''
 	scrubs the data set using the time, na, and drop functions
 	'''
-	to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4','recent_date5', 'playcount', 'registered', 'id']
+	# if a drop list was not passed, use defaults
+	if not to_drop:
+		to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
+					'recent_date5','registered', 'id']
 	presence = ['country','gender']
 	d = time(dataframe)
 	d = drop(d, to_drop)
@@ -87,9 +91,6 @@ def make_encoder():
 			values.append(value)
 	encoder.fit(values)
 	pickle.dump(encoder, file('./encoder.pkl', 'w'))
-
-
-
 
 def dencode(dataframe, decode = False):
 	'''
@@ -129,22 +130,21 @@ def make_predictions(dataframe, model = False):
 		model = pickle.load(file('rfmodel.pkl'))
 	solutions = dataframe['subscriber']
 	predictions = model.predict(dataframe.drop('subscriber', axis = 1))
-	return np.sum(solutions == predictions)*1.0/len(predictions)
-	#return solutions, predictions
+	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
+	return solutions, predictions, sv_score
 
-def data():
+def data(to_drop = None):
 	'''
 	loads in the data set
 	'''
 	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
 	#df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	#print sum(df1['subscriber'] == 1)
 	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
 	test = pd.read_csv('ssvout/5000.ssv', na_values='None')
-	df2 = scrub(df1)
-	test2 = scrub(test)
+	df2 = scrub(df1, to_drop)
+	test2 = scrub(test, to_drop)
 	encoded = dencode(df2)
 	test_encoded = dencode(test2)
 	return encoded, test_encoded
