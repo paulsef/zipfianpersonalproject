@@ -5,7 +5,7 @@ import os
 import json
 from pymongo import MongoClient
 import pdb
-
+from users.txt import 
 
 
 def connect():
@@ -158,20 +158,26 @@ def flatten_topartist(entry, master):
 	#return entry
 	return master
 
-def flatten_friends(entry, master):
+def flatten_friends(entry, master = None, tomod = False):
 	try:
 		friend_list = entry['getfriends']['friends']['user']
 		if isinstance(friend_list, dict):
 			friend_list = [friend_list]
 		num_friends = len(friend_list)
-		pdb.set_trace()
-		friend_sub = len([i for i in friend_list if friend_list[i]['subscriber'] == 1])
-		for friend in friend_list:
+		friend_sub = len([friend for friend in friend_list if friend['subscriber'] == '1'])
+		id_list = 
 	except(KeyError):
 		num_friends = 0
+		friend_sub = 0
 	#entry['getfriends'] = num_friends
 	#return entry
+	if tomod:
+		if num_friends > 0:
+			id_list = [friend['id'] for friend in friend_list]
+			add_new_subscribers(new_users)
+			return
 	master['friend_count'] = num_friends
+	master['friend_sub'] = friend_sub
 	return master
 
 
@@ -233,11 +239,11 @@ def main(infile):
 if __name__ == '__main__' :
 	for filename in os.listdir('jsonout'):
 		dict_list = from_json('jsonout/' + filename)
-		graph(dict_list)
+		#graph(dict_list)
 		# print filename
-		# df = main('jsonout/' + filename)
-		# outfilename = filename.split('.')[0] + '.ssv'
-		# df.to_csv('ssvout/' + outfilename, sep = ',',index = False, na_rep = "None")#encoding = 'utf-16'	
+		df = main('jsonout/' + filename)
+		outfilename = filename.split('.')[0] + '.ssv'
+		df.to_csv('ssvout/' + outfilename, sep = ',',index = False, na_rep = "None")#encoding = 'utf-16'	
 
 
 
