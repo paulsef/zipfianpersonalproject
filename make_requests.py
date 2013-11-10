@@ -73,9 +73,10 @@ def fix_friends(u_id):
 	client = MongoClient()
 	db = client.test
 	collection = db.test
-	pdb.set_trace()
-	collection.update({'_id':str(id)},
-						{'$set':{'getfriends':new_friends.json()}})
+	alpha = new_friends.json()
+	# updating the db with correct friends
+	collection.update({'_id':u_id},{'$set':{'getfriends':alpha}})
+	return alpha['friends']['user']
 
 def get(user_id):
 	'''
@@ -94,11 +95,13 @@ def get(user_id):
 					'format':'json'}
 		if call in ['user.gettopartists','user.getTopTags']:
 			payload['limit'] = '5'
+		if call == 'user.getfriends':
+			payload['limit'] = 1000
 		try:
 			# get user info
 			too_many(call)
 			info = requests.get('http://ws.audioscrobbler.com/2.0/', params = payload)
-		except (requests.exceptions, requests.exceptions.ConnectionError):
+		except (requests.exceptions, requests.exceptions.ConnectionError, requests.exceptions.HTTPError, requests.exceptions.RequestException):
 			results = None
 			# if there was an error in the request, 
 			# break out of calls and return none
@@ -116,22 +119,22 @@ def get(user_id):
 				results = None
 				break
 			else:
-				client = MongoClient()
-				db = client.test
-				collection = db.test
-				new_id = info.json()['user']['id']
-				user_id = new_id
-				if collection.find({'_id':new_id}).count() > 0:
-					print 'breaking because we already saw this user'
-					results = 'user already exists in db'
-					break
+				#client = MongoClient()
+				#db = client.test
+				#collection = db.test
+				#new_id = info.json()['user']['id']
+				#user_id = new_id
+				#if collection.find({'_id':new_id}).count() > 0:
+				#	print 'breaking because we already saw this user'
+				#	results = 'user already exists in db'
+				#	break
 				#if info.json()['user']['subscriber'] == "0":
 				#	print 'skipping to next user for better science'
 				#	results = 'user is not a subsciber'
 				#	break
-				else:
-					results['_id'] = user_id
-					results['getinfo'] = info.json()
+				#else:
+				results['_id'] = user_id
+				results['getinfo'] = info.json()
 		elif call == 'user.gettopartists':
 			# if the call was get top artists, iterate through the top artists
 			# and get the first top tag
@@ -180,43 +183,61 @@ def write_to_db(user_info):
 	
 def main():
 	# create a list of ids to iterate through
-	timeout = time.time() + 120
-	ids = range(11)
+	#timeout = time.time() + 120
+	#ids = 1#range(11)
 	new = 0
-	while len(ids) > 10:
+	mod = file('tomodusers.txt')
+	ids = mod.readline().strip()
+	mod.close()
+	while len(ids) > 0:
 		#print '********* fueling the fire ********'
 		#newsubs.main()
-		ids = user_list('tomodusers.txt')
-		for i in range(len(ids)):
-			if time.time() > timeout:
-				timeout = time.time() + 120
-				break
-			user_id = ids[i]
-			print "getting info for " + str(user_id) + ' on iteration ' + str(i) + ' ' + str(float(i)/len(ids)*100) + '%'
-			f = file('log_file', 'a')
-			too_many('user_id lookup')
-			f.write('looking up user ' + str(user_id))
-			f.write('\n')
-			info = get(user_id = user_id)
-			if info:
-				if isinstance(info, str):
-					f.write(info)
-					f.write('\n')
-				else:
-					new += 1
-					print new
-					f.write('writing info to database ' + str(new))
-					f.write('\n')
-					if len(info.keys()) != 8:
-						pdb.set_trace()
-					write_to_db(user_info = info)
-			else:
-				f.write('not added due to error in user info')
-				f.write('\n')
-			# remove the user from the file
+		#f = file('tomodusers.txt')
+		#ids = user_list('tomodusers.txt')
+		client = MongoClient()
+		db = client.test
+		collection = db.test
+		#for i in range(len(ids)):
+			# if time.time() > timeout:
+			# 	timeout = time.time() + 120
+			# 	break
+		user_id = ids#[i]
+		if collection.find({'_id':user_id}).count() > 0:
+			print 'breaking because we already saw this user'
+			#results = 'user already exists in db'
 			user_list('tomodusers.txt', remove = True)
-			#etl.flatten_friends(info, tomod = True)
-			f.close()
+			mod = file('tomodusers.txt')
+			ids = mod.readline().strip()
+			mod.close()
+			continue
+		print "getting info for " + str(user_id) #' on iteration ' + str(i) + ' ' + str(float(i)/len(ids)*100)
+		f = file('log_file', 'a')
+		too_many('user_id lookup')
+		f.write('looking up user ' + str(user_id))
+		f.write('\n')
+		info = get(user_id = user_id)
+		if info:
+			if isinstance(info, str):
+				f.write(info)
+				f.write('\n')
+			else:
+				new += 1
+				print new
+				f.write('writing info to database ' + str(new))
+				f.write('\n')
+				if len(info.keys()) != 8:
+					pdb.set_trace()
+				write_to_db(user_info = info)
+				etl.flatten_friends(info, tomod = True)
+		else:
+			f.write('not added due to error in user info')
+			f.write('\n')
+		# remove the user from the file
+		user_list('tomodusers.txt', remove = True)
+		f.close()
+		mod = file('tomodusers.txt')
+		ids = mod.readline().strip()
+		mod.close()
 
 if __name__ == "__main__":
 	main()

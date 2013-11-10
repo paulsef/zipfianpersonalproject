@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import random
 import os
 import json
@@ -171,14 +171,28 @@ def flatten_friends(entry, master = None, tomod = False, full_db = False):
 		friend_sub = 0
 	#entry['getfriends'] = num_friends
 	#return entry
+	# modifying the queue?
 	if tomod:
+		# modifying the whole database to fix some friends?
 		if full_db == True:
+			# only do that if there are 50 friends
 			if num_friends == 50:
-				make_requests.fix_friends(entry['getinfo']['user']['id'])
-		elif num_friends > 0:
-			id_list = [friend['id'] for friend in friend_list]
-			add_new_subscribers(id_list)
+				print 'found a dork with 50 friends'
+				friend_list = make_requests.fix_friends(entry['getinfo']['user']['id'])
+			elif num_friends == 0:
+				return
+			else:
+				pass
+		# trying to modify the queue but you have no friends?
+		elif num_friends == 0:
 			return
+		# place holder
+		else:
+			pass
+		# add whatever friends we found to the queue
+		id_list = [friend['id'] for friend in friend_list]
+		add_new_subscribers(id_list)
+		return
 	if master:
 		master['friend_count'] = num_friends
 		master['friend_sub'] = friend_sub
