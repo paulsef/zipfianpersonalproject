@@ -5,7 +5,8 @@ import os
 import json
 from pymongo import MongoClient
 import pdb
-from users.txt import 
+from newsubs import add_new_subscribers
+import make_requests
 
 
 def connect():
@@ -158,27 +159,30 @@ def flatten_topartist(entry, master):
 	#return entry
 	return master
 
-def flatten_friends(entry, master = None, tomod = False):
+def flatten_friends(entry, master = None, tomod = False, full_db = False):
 	try:
 		friend_list = entry['getfriends']['friends']['user']
 		if isinstance(friend_list, dict):
 			friend_list = [friend_list]
 		num_friends = len(friend_list)
 		friend_sub = len([friend for friend in friend_list if friend['subscriber'] == '1'])
-		id_list = 
 	except(KeyError):
 		num_friends = 0
 		friend_sub = 0
 	#entry['getfriends'] = num_friends
 	#return entry
 	if tomod:
-		if num_friends > 0:
+		if full_db == True:
+			if num_friends == 50:
+				make_requests.fix_friends(entry['getinfo']['user']['id'])
+		elif num_friends > 0:
 			id_list = [friend['id'] for friend in friend_list]
-			add_new_subscribers(new_users)
+			add_new_subscribers(id_list)
 			return
-	master['friend_count'] = num_friends
-	master['friend_sub'] = friend_sub
-	return master
+	if master:
+		master['friend_count'] = num_friends
+		master['friend_sub'] = friend_sub
+		return master
 
 
 def flatten_events(entry, master):

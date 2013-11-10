@@ -5,6 +5,7 @@ import time
 import pdb
 from pymongo import MongoClient
 import newsubs
+import etl
 
 requests_count = 0
 
@@ -57,6 +58,25 @@ def too_many(call):
 	else:
 		requests_count += 1
 
+def fix_friends(u_id):
+	'''
+	makes an api call to get the correct friend data if the number
+	of friends was capped at 50.
+	'''
+	call = 'user.getfriends'
+	too_many(call = call)
+	payload = {'user':u_id, 'method':call,
+				'api_key':'872d9492f0b60d20c8f230faef15cc00',
+				'format':'json',
+				'limit':1000}
+	new_friends = requests.get('http://ws.audioscrobbler.com/2.0/', params = payload)
+	client = MongoClient()
+	db = client.test
+	collection = db.test
+	pdb.set_trace()
+	collection.update({'_id':str(id)},
+						{'$set':{'getfriends':new_friends.json()}})
+
 def get(user_id):
 	'''
 	takes an user_id and returns the relevent information for that user
@@ -69,9 +89,9 @@ def get(user_id):
 	# make the api calls
 	for call in api_calls:
 		# customize url with payload
-		payload = {'user': 
-		(user_id),'method':call, 
-		'api_key':'872d9492f0b60d20c8f230faef15cc00', 'format':'json'}
+		payload = {'user': (user_id),'method':call, 
+					'api_key':'872d9492f0b60d20c8f230faef15cc00', 
+					'format':'json'}
 		if call in ['user.gettopartists','user.getTopTags']:
 			payload['limit'] = '5'
 		try:
@@ -105,10 +125,10 @@ def get(user_id):
 					print 'breaking because we already saw this user'
 					results = 'user already exists in db'
 					break
-				if info.json()['user']['subscriber'] == "0":
-					print 'skipping to next user for better science'
-					results = 'user is not a subsciber'
-					break
+				#if info.json()['user']['subscriber'] == "0":
+				#	print 'skipping to next user for better science'
+				#	results = 'user is not a subsciber'
+				#	break
 				else:
 					results['_id'] = user_id
 					results['getinfo'] = info.json()
@@ -164,8 +184,8 @@ def main():
 	ids = range(11)
 	new = 0
 	while len(ids) > 10:
-		print '********* fueling the fire ********'
-		newsubs.main()
+		#print '********* fueling the fire ********'
+		#newsubs.main()
 		ids = user_list('tomodusers.txt')
 		for i in range(len(ids)):
 			if time.time() > timeout:
@@ -195,6 +215,7 @@ def main():
 				f.write('\n')
 			# remove the user from the file
 			user_list('tomodusers.txt', remove = True)
+			#etl.flatten_friends(info, tomod = True)
 			f.close()
 
 if __name__ == "__main__":
