@@ -8,3 +8,4 @@ users.txt
 ssvout/
 jsonout/
 paulsef_new_ca.pem
+encoder.pkl
