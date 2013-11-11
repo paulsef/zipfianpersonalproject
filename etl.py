@@ -1,5 +1,5 @@
 import numpy as np
-#import pandas as pd
+import pandas as pd
 import random
 import os
 import json
@@ -58,7 +58,8 @@ def graph(list_of_dicts):
 			friend_list = [friend_list]
 		try:
 			for friend in friend_list:
-				text = str(doc['getinfo']['user']['id'] + '\t' + friend['id'])
+				text = str(doc['getinfo']['user']['id'] + '\t' + friend['id'] + 
+							'\t' + doc['getinfo']['user']['subscriber'])
 				f.write(text)
 				f.write('\n')
 		except(KeyError):
@@ -257,8 +258,8 @@ def main(infile):
 if __name__ == '__main__' :
 	for filename in os.listdir('jsonout'):
 		dict_list = from_json('jsonout/' + filename)
-		#graph(dict_list)
-		# print filename
+		graph(dict_list)
+		print filename
 		df = main('jsonout/' + filename)
 		outfilename = filename.split('.')[0] + '.ssv'
 		df.to_csv('ssvout/' + outfilename, sep = ',',index = False, na_rep = "None")#encoding = 'utf-16'	

@@ -1,10 +1,16 @@
 import networkx as nx
+import pdb
+
 def make_graph():
 	f = open('graph.txt')
-	mapping = f.readlines()
-	edges = [line.strip().split() for line in mapping]
+	lines = f.readlines()
+	info = [line.strip().split() for line in lines]
+	edges =[(line[0],line[1]) for line in info]
 	G = nx.Graph()
-	#nodes = set([edge[0] for edge in edges] + [edge[1] for edge in edges])
-	#G.add_nodes_from(nodes)
+	color_dict = {}
+	for line in info:
+		color_dict[line[0]] = line[2]
+	for node in color_dict.keys():
+		G.add_node(node, color = color_dict[node])
 	G.add_edges_from(edges)
 	return G

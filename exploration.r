@@ -1,6 +1,7 @@
 setwd("/Users/paul/Zipfian/personal_project")
 source('dfs.r')
 library(ggplot2)
+library(reshape2)
 dcom <- dcom[complete.cases(dcom[,10:41]),]
 sub1 <- dcom[dcom$playcount > 1,]
 ggplot(sub1) + aes(x = sub1$registered, y = sub1$playcount, color = factor(sub1$subscriber)) + 
@@ -50,13 +51,14 @@ user <- dcom[dcom$subscriber == 0,]
 ggplot(subscriber,aes(x = month_registered)) + geom_histogram()
 ggplot(user,aes(x = month_registered)) + geom_histogram()
 
-# dcom$reg_recent_diff <- as.numeric(dcom$recent_date1 -dcom$registered, units = "days")
+dcom$reg_recent_diff <- as.numeric(dcom$recent_date1 -dcom$registered, units = "days")
 # diff <- data.frame(as.numeric(dcom$recent_date1 - dcom$recent_date2, units = "hours"), 
 #   as.numeric(dcom$recent_date2 - dcom$recent_date3, units = "hours"),
 #   as.numeric(dcom$recent_date3 - dcom$recent_date4, units = "hours"), 
 #   as.numeric(dcom$recent_date4 - dcom$recent_date5, units = "hours"), row.names = c('d1','d2','d3','d3'))
 # dcom$avg_diff <- transform(dcom, avg_diff)
 # dcom$avg_diff <- mean(diff)
+ggplot(subscriber, aes(x = reg_recent_diff)) + geom_histogram() #+ scale_y_sqrt()
 
 subscriber <- dcom[dcom$subscriber == 1,]
 user <- dcom[dcom$subscriber == 0,]
@@ -67,5 +69,6 @@ ggplot(user, aes(x = reg_recent_diff)) + geom_histogram() + scale_y_sqrt()
 ggplot(subscriber, aes(x = avg_diff)) + geom_histogram()
 ggplot(user, aes(x = avg_diff)) + geom_histogram()
 
-ggplot(dcom) + aes(x = rownames(dcom), y= dcom$top_count4, color = dcom$subscriber) +
-  geom_point() + scale_y_log10()
+melted <- melt(data=dcom[,c('friend_sub', 'subscriber')], id.vars='subscriber',value.name='friend_sub', )
+ggplot(dcom) + aes(x = dcom$friend_count, y= dcom$friend_sub, color = dcom$subscriber) +
+  geom_jitter() + scale_x_log10() + scale_y_log10()#geom_point(position = jitter) 

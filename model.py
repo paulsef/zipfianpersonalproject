@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import time
 import pickle
+import random 
+import copy
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import Imputer, LabelEncoder
@@ -30,12 +32,22 @@ def time(dataframe):
 	    			hours.append(item)
 	    		hours.append(item.strftime('%H'))
 	    	dataframe['hour_registered'] = hours
+	avg_difference = []
+	time = np.array(time)
+	for row in dataframe.index:
+		dates = dataframe.ix[row, time[time != 'registered']]
+		if np.any(pd.isnull(dates)):
+			pdb.set_trace()
+		tdelta = (max(dates) - min(dates))/(len(dates)-1)
+		avg_difference.append((tdelta.total_seconds())/(60*60))
+	dataframe['avg_diff_hours'] = avg_difference
 	return dataframe
 
 def nas(dataframe, presence):
 	'''
 	checks certain features for presence
 	imputes age based on median
+	drops (some) incomplete rows
 	'''
 	for col in presence:
 		for i in dataframe[col].index:
@@ -43,6 +55,7 @@ def nas(dataframe, presence):
 	#imp = Imputer(missing_values = 'NaN', strategy = 'most_frequent')
 	#dataframe['age'] = imp.fit_transform(dataframe['age'])[0]
 	dataframe['age'] = dataframe['age'].fillna(dataframe['age'].median())
+	dataframe = dataframe.iloc[dataframe.iloc[:,8:].dropna().index,]
 	return dataframe
 
 def drop(dataframe, dropcolumns):
@@ -51,7 +64,6 @@ def drop(dataframe, dropcolumns):
 	more than five songs
 	'''
 	d = dataframe.drop(dropcolumns, axis = 1)
-	d = d.iloc[d.iloc[:,8:].dropna().index,]
 	return d
 
 def scrub(dataframe, to_drop = None):
@@ -63,9 +75,9 @@ def scrub(dataframe, to_drop = None):
 		to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
 					'recent_date5','registered', 'id']
 	presence = ['country','gender']
-	d = time(dataframe)
+	d = nas(dataframe, presence)
+	d = time(d)
 	d = drop(d, to_drop)
-	d = nas(d, presence)
 	return d
 
 def make_encoder():
@@ -92,13 +104,18 @@ def make_encoder():
 	encoder.fit(values)
 	pickle.dump(encoder, file('./encoder.pkl', 'w'))
 
-def dencode(dataframe, decode = False):
+def dencode(dataframe, one_off = False, decode = False):
 	'''
 	uses sklearn to encode all values as integers/floats
 	returns a dictionary containing sklearn encoding objects
 	and encoded data frame
 	'''
 	encoder = pickle.load(file('./encoder.pkl'))
+	if one_off:
+		if decode:
+			return encoder.inverse_transform([dataframe])
+		else:
+			return encoder.transform([dataframe])
 	result = pd.DataFrame(index = dataframe.index)
 	for col in dataframe:
 		if decode:
@@ -138,16 +155,21 @@ def data(to_drop = None):
 	loads in the data set
 	'''
 	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	#df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	test = pd.read_csv('ssvout/5000.ssv', na_values='None')
-	df2 = scrub(df1, to_drop)
-	test2 = scrub(test, to_drop)
-	encoded = dencode(df2)
-	test_encoded = dencode(test2)
-	return encoded, test_encoded
+	 
+	#df2 = scrub(df1, to_drop)
+	#test2 = scrub(test, to_drop)
+	train_index = set(random.sample(df1.index,len(df.index)*.7))
+	test_index = copy.copyu(train_index)
+	test_index = set(df1.index).difference_update(test_index)
+	train = df1.iloc[train_index]
+	test = df1.iloc[test_index]
+	train_encoded = dencode(train)
+	test_encoded = dencode(test)
+	return train_encoded, test_encoded
 
 
 

@@ -101,7 +101,7 @@ def get(user_id):
 			# get user info
 			too_many(call)
 			info = requests.get('http://ws.audioscrobbler.com/2.0/', params = payload)
-		except (requests.exceptions, requests.exceptions.ConnectionError, requests.exceptions.HTTPError, requests.exceptions.RequestException):
+		except (requests.exceptions, requests.exceptions.ConnectionError, requests.exceptions.HTTPError,requests.exceptions.RequestException):
 			results = None
 			# if there was an error in the request, 
 			# break out of calls and return none
@@ -159,7 +159,7 @@ def get(user_id):
 						tag_info = requests.get('http://ws.audioscrobbler.com/2.0/',
 							params = payload)
 						tags.append(tag_info.json()['toptags']['tag'][0]['name'])
-					except(requests.exceptions):
+					except(requests.exceptions, requests.exceptions.ConnectionError, requests.exceptions.HTTPError,requests.exceptions.RequestException):
 						# if the request for artist tags failed, continue to next artist
 						pass
 				results['top_tags'] = tags
@@ -189,14 +189,14 @@ def main():
 	mod = file('tomodusers.txt')
 	ids = mod.readline().strip()
 	mod.close()
+	client = MongoClient()
+	db = client.test
+	collection = db.test
 	while len(ids) > 0:
 		#print '********* fueling the fire ********'
 		#newsubs.main()
 		#f = file('tomodusers.txt')
 		#ids = user_list('tomodusers.txt')
-		client = MongoClient()
-		db = client.test
-		collection = db.test
 		#for i in range(len(ids)):
 			# if time.time() > timeout:
 			# 	timeout = time.time() + 120
