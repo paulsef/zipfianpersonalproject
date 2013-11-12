@@ -62,11 +62,11 @@ def nas(dataframe, presence = None, old = False):
 	dataframe['age'] = dataframe['age'].fillna(dataframe['age'].median())
 	for row in dataframe['gender'].index:
 		if dataframe['gender'][row] == 'f':
-			dataframe['gender'][row] == 2
+			dataframe['gender'][row] = 2
 		elif dataframe['gender'][row] == 'm':
-			dataframe['gender'][row] == 1
+			dataframe['gender'][row] = 1
 		else:
-			dataframe['gender'][row] == 0
+			dataframe['gender'][row] = 0
 	dataframe = dataframe.ix[dataframe.iloc[:,8:].dropna().index]
 	return dataframe
 
@@ -78,19 +78,15 @@ def drop(dataframe, dropcolumns):
 	d = dataframe.drop(dropcolumns, axis = 1)
 	return d
 
-def scrub(dataframe, to_drop = None):
+def scrub(dataframe):
 	'''
 	scrubs the data set using the time, na, and drop functions
 	'''
 	# if a drop list was not passed, use defaults
-	if not to_drop:
-		to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
-					'recent_date5','registered', 'id','name' , 'recent_artist1', 
-					'recent_artist2', 'recent_artist3', 'recent_artist4', 'recent_artist5']
 	#presence = ['country','gender']
 	d = nas(dataframe)#, presence)
 	d = time(d)
-	d = drop(d, to_drop)
+	#d = drop(d, to_drop)
 	d = reshape(d)
 	return d
 
@@ -198,7 +194,7 @@ def data(to_drop = None, encode = True, reencode = False):
 
 	return train, test
 
-def reshape(dataframe):
+def reshape(dataframe, to_drop = None):
 	genres = []
 	colset1 = ['tag1', 'tag2','tag3', 'tag4', 'tag5']
 	colset2 = ['top_count1', 'top_count2','top_count3', 'top_count4','top_count5']
@@ -214,8 +210,13 @@ def reshape(dataframe):
 			genre_df[g][row] += dataframe[col2][row]
 			g = 0
 	dummied1 = pd.get_dummies(dataframe['country'])
-	concatenated = pd.concat([dataframe, genre_df, dummied1])
-	concatenated = concatenated.drop(colset1+colset2, axis = 1)
+	if not to_drop:
+			to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
+						'recent_date5','registered', 'id','name' , 'recent_artist1', 
+						'recent_artist2', 'recent_artist3', 'recent_artist4', 'recent_artist5',
+						'country']
+	dataframe = drop(dataframe, to_drop + colset1 + colset1)
+	concatenated = pd.concat([dataframe, genre_df, dummied1], axis =1)
 	return concatenated
 
 
