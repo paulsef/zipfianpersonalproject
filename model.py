@@ -6,7 +6,7 @@ import random
 import copy
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import Imputer, LabelEncoder
+from sklearn.preprocessing import Imputer, LabelEncoder, normalize
 
 import pdb
 
@@ -146,7 +146,7 @@ def growforest(encoded_df, num_trees, to_pickle = False):
 	if to_pickle:
 		pickle.dump(mod, file('rfmodel.pkl'))
 		return
-	features = zip(mod.feature_importances_, encoded_df.columns)
+	features = zip(mod.feature_importances_, encoded_training.columns)
 	features = sorted(features, reverse=True)#, key = lambda x:features[0])
 	return mod, features
 
@@ -163,22 +163,18 @@ def make_predictions(dataframe, model = False):
 	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
 	return solutions, predictions, sv_score
 
-def data(to_drop = None, encode = True, reencode = False):
+def data(to_drop = None, encode = False, reencode = False):
 	'''
 	loads in the data set
 	'''
 	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	#df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	#df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	#df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	#df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	#df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
-	#df1 = df1.drop_duplicates(cols = 'id', take_last = True)
-	
-	ramsam = random.sample(list(df1.index), len(df1.index))
-	break_point = int(len(ramsam)*.7)
-	train_index = ramsam[0:break_point]
-	test_index = ramsam[break_point:]
+	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
+	# create a random list to index the train and test set)
 	if encode:
 		train = scrub(df1.ix[train_index])
 		test = scrub(df1.ix[test_index])
@@ -187,12 +183,15 @@ def data(to_drop = None, encode = True, reencode = False):
 		train = dencode(train)
 		test = dencode(test)
 	else:
-		train = scrub(df1.ix[train_index])
-		test = scrub(df1.ix[test_index])
+		scrubbed = scrub(df1)
+		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
+		break_point = int(len(ramsam)*.7))
+		train_index = ramsam[0:break_point]
+		test_index = ramsam[break_point:]
+		train = scrubbed.ix[train_index]
+		test = scrubbed.ix[test_index]
 		#train = df1.ix[train_index]
 		#test = df1.ix[test_index]
-
-
 	return train, test
 
 def reshape(dataframe, to_drop = None):
@@ -209,7 +208,8 @@ def reshape(dataframe, to_drop = None):
 		for row in dataframe.index:
 			g = dataframe[col1][row]
 			genre_df[g][row] += dataframe[col2][row]
-			g = 0
+	for row in genre_df.index:
+		genre_df.ix[row] = genre_df.ix[row]/dataframe['playcount'][row]
 	genre_df = genre_df.applymap(float)
 	dummied1 = pd.get_dummies(dataframe['country'])
 	if not to_drop:
@@ -219,8 +219,13 @@ def reshape(dataframe, to_drop = None):
 						'recent_track1','recent_track2' ,'recent_track3', 'recent_track4','recent_track5',
 						'top_artist1','top_artist2','top_artist3','top_artist4','top_artist5', 'country']
 	dataframe = drop(dataframe, to_drop + colset1 + colset1)
-	concatenated = pd.concat([dataframe, genre_df, dummied1], axis =1)
-	return concatenated
+	genre_df.rename(columns = {'BG':'BG.genre'}, inplace = True)
+	#concatenated = pd.concat([dataframe, genre_df, dummied1], axis = 1, ignore_index = True).applymap(float)
+	#return concatenated
+	#appended = dataframe.append(genre_df).append(dummied1)
+	x = pd.merge(dummied1, genre_df, left_index = True, right_index = True)
+	z = pd.merge(x, dataframe, left_index = True, right_index = True).applymap(float)
+	return z
 
 
 
