@@ -31,7 +31,7 @@ def time(dataframe):
 	    		if pd.isnull(item):
 	    			hours.append(item)
 	    		hours.append(item.strftime('%H'))
-	    	dataframe['hour_registered'] = hours
+	    	dataframe['hour_registered'] = np.array(hours, dtype = float)
 	avg_difference = []
 	use_diff = []
 	time = np.array(time)
@@ -43,8 +43,8 @@ def time(dataframe):
 		avg_difference.append((tdelta1.total_seconds())/(60*60))
 		tdelta2 = dataframe.ix[row, 'recent_date1'] - dataframe.ix[row, 'registered']
 		use_diff.append(tdelta2.total_seconds()/(60*60*24))
-	dataframe['avg_diff_hours'] = avg_difference
-	dataframe['use_diff_days'] = use_diff
+	dataframe['avg_diff_hours'] = np.array(avg_difference, dtype = float)
+	dataframe['use_diff_days'] = np.array(use_diff, dtype = float)
 	return dataframe
 
 def nas(dataframe, presence = None, old = False):
@@ -67,6 +67,7 @@ def nas(dataframe, presence = None, old = False):
 			dataframe['gender'][row] = 1
 		else:
 			dataframe['gender'][row] = 0
+	dataframe['gender'] = dataframe['gender'].apply(float)
 	dataframe = dataframe.ix[dataframe.iloc[:,8:].dropna().index]
 	return dataframe
 
@@ -209,12 +210,14 @@ def reshape(dataframe, to_drop = None):
 			g = dataframe[col1][row]
 			genre_df[g][row] += dataframe[col2][row]
 			g = 0
+	genre_df = genre_df.applymap(float)
 	dummied1 = pd.get_dummies(dataframe['country'])
 	if not to_drop:
 			to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
 						'recent_date5','registered', 'id','name' , 'recent_artist1', 
 						'recent_artist2', 'recent_artist3', 'recent_artist4', 'recent_artist5',
-						'country']
+						'recent_track1','recent_track2' ,'recent_track3', 'recent_track4','recent_track5',
+						'top_artist1','top_artist2','top_artist3','top_artist4','top_artist5', 'country']
 	dataframe = drop(dataframe, to_drop + colset1 + colset1)
 	concatenated = pd.concat([dataframe, genre_df, dummied1], axis =1)
 	return concatenated
