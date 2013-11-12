@@ -33,14 +33,18 @@ def time(dataframe):
 	    		hours.append(item.strftime('%H'))
 	    	dataframe['hour_registered'] = hours
 	avg_difference = []
+	use_diff = []
 	time = np.array(time)
 	for row in dataframe.index:
 		dates = dataframe.ix[row, time[time != 'registered']]
-		if np.any(pd.isnull(dates)):
-			pdb.set_trace()
-		tdelta = (max(dates) - min(dates))/(len(dates)-1)
-		avg_difference.append((tdelta.total_seconds())/(60*60))
+		#if np.any(pd.isnull(dates)):
+		#	pdb.set_trace()
+		tdelta1 = (max(dates) - min(dates))/(len(dates)-1)
+		avg_difference.append((tdelta1.total_seconds())/(60*60))
+		tdelta2 = dataframe.ix[row, 'recent_date1'] - dataframe.ix[row, 'registered']
+		use_diff.append(tdelta2.total_seconds()/(60*60*24))
 	dataframe['avg_diff_hours'] = avg_difference
+	dataframe['use_diff_days'] = use_diff
 	return dataframe
 
 def nas(dataframe, presence):
@@ -55,7 +59,7 @@ def nas(dataframe, presence):
 	#imp = Imputer(missing_values = 'NaN', strategy = 'most_frequent')
 	#dataframe['age'] = imp.fit_transform(dataframe['age'])[0]
 	dataframe['age'] = dataframe['age'].fillna(dataframe['age'].median())
-	dataframe = dataframe.iloc[dataframe.iloc[:,8:].dropna().index,]
+	dataframe = dataframe.ix[dataframe.iloc[:,8:].dropna().index]
 	return dataframe
 
 def drop(dataframe, dropcolumns):
@@ -73,27 +77,29 @@ def scrub(dataframe, to_drop = None):
 	# if a drop list was not passed, use defaults
 	if not to_drop:
 		to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
-					'recent_date5','registered', 'id']
+					'recent_date5','registered', 'id', 'avg_diff_hours', 'name']
 	presence = ['country','gender']
 	d = nas(dataframe, presence)
 	d = time(d)
 	d = drop(d, to_drop)
 	return d
 
-def make_encoder():
+def make_encoder(test, train):
 	'''
 	creates a general label encoder for every
 	unique value of all categorical variables
 	'''
 	# load in the whole dataset
-	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	# df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
+	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
 	# scrube the data
-	df1 = scrub(df1)
+	# df1 = scrub(df1)
 	# initialize the encoder and a list to store all categorical values
+	df1 = train
+	df1 = train.append(test, ignore_index = True)
 	encoder = LabelEncoder()
 	values = []
 	cols = []
@@ -150,7 +156,7 @@ def make_predictions(dataframe, model = False):
 	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
 	return solutions, predictions, sv_score
 
-def data(to_drop = None):
+def data(to_drop = None, encode = True, reencode = False):
 	'''
 	loads in the data set
 	'''
@@ -159,17 +165,34 @@ def data(to_drop = None):
 	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	 
+	df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
+	ramsam = random.sample(list(df1.index), len(df1.index))
+	break_point = int(len(ramsam)*.7)
+	train_index = ramsam[0:break_point]
+	test_index = ramsam[break_point:]
+	if encode:
+		train = scrub(df1.ix[train_index])
+		test = scrub(df1.ix[test_index])
+		if reencode:
+			make_encoder(train, test)
+		train = dencode(train)
+		test = dencode(test)
+	else:
+		train = scrub(df1.ix[train_index])
+		test = scrub(df1.ix[test_index])
+	return train, test
 	#df2 = scrub(df1, to_drop)
 	#test2 = scrub(test, to_drop)
-	train_index = set(random.sample(df1.index,len(df.index)*.7))
-	test_index = copy.copyu(train_index)
-	test_index = set(df1.index).difference_update(test_index)
-	train = df1.iloc[train_index]
-	test = df1.iloc[test_index]
-	train_encoded = dencode(train)
-	test_encoded = dencode(test)
-	return train_encoded, test_encoded
+	# train_index = set(random.sample(df1.index,len(df.index)*.7))
+	# test_index = copy.copyu(train_index)
+	# test_index = set(df1.index).difference_update(test_index)
+	# train = df1.iloc[train_index]
+	# test = df1.iloc[test_index]
+	# train_encoded = dencode(train)
+	# test_encoded = dencode(test)
+	# return train_encoded, test_encoded
+
 
 
 
