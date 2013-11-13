@@ -156,8 +156,8 @@ def dencode(dataframe, one_off = False, decode = False):
 	return result
 
 def growforest(encoded_df, num_trees, to_pickle = False):
-	encoded_target = encoded_df['subscriber']
-	encoded_training = encoded_df.drop('subscriber', axis = 1)
+	# encoded_target = encoded_df['subscriber']
+	# encoded_training = encoded_df.drop('subscriber', axis = 1)
 	m = RandomForestClassifier(n_estimators=num_trees, oob_score=True)
 	mod = m.fit(encoded_training, encoded_target)
 	if to_pickle:
@@ -222,11 +222,11 @@ def data(to_drop = None, encode = False, reencode = False):
 	loads in the data set
 	'''
 	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
 	# create a random list to index the train and test set)
 	if encode:
@@ -238,20 +238,24 @@ def data(to_drop = None, encode = False, reencode = False):
 		test = dencode(test)
 	else:
 		scrubbed = scrub(df1)
-		scrubbed['playcount'] = np.log(scrubbed['playcount'] + 2)
-		scrubbed['use_diff_days'] = np.log(scrubbed['use_diff_days'] + 1)
-		norm = StandardScaler()
-		norm.fit(scrubbed)
 		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
 		break_point = int(len(ramsam)*.7)
 		train_index = ramsam[0:break_point]
 		test_index = ramsam[break_point:]
-		train = norm.transform(scrubbed.ix[train_index])
-		test = norm.transform(scrubbed.ix[test_index])
-		train = pd.DataFrame(train, index = train_index, columns = scrubbed.columns)
-		test = pd.DataFrame(test, index = test_index, columns = scrubbed.columns)
-		#train = df1.ix[train_index]
-		#test = df1.ix[test_index]
-	return train, test, scrubbed.ix[train_index]
+		# extract the target variables
+		targets = scrubbed.ix[train_index, 'subscriber']
+		solutions = scrubbed.ix[test_index, 'subscriber']
+		scrubbed = drop(scrubbed, ['subscriber'])
+		# split the data
+		train = scrubbed.ix[train_index]
+		test = scrubbed.ix[test_index]
+		# normalize the scrubbed data
+		norm = StandardScaler()
+		norm.fit(scrubbed)
+		normtrain = norm.transform(train)
+		normtest = norm.transform(test)
+		normtrain = pd.DataFrame(normtrain, index = train_index, columns = scrubbed.columns)
+		normtest = pd.DataFrame(normtest, index = test_index, columns = scrubbed.columns)
+	return normtrain, targets, normtest, solutions
 
 
