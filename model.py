@@ -4,9 +4,10 @@ import time
 import pickle
 import random 
 import copy
+import math
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import Imputer, LabelEncoder, normalize
+from sklearn.preprocessing import Imputer, LabelEncoder, StandardScaler, Normalizer
 
 import pdb
 
@@ -79,9 +80,21 @@ def drop(dataframe, dropcolumns):
 	d = dataframe.drop(dropcolumns, axis = 1)
 	return d
 
+def logtransform(dataframe, to_transform = []):
+	'''
+	takes the log transform of certain variables in the dataset
+	'''
+	for col in to_transform:
+		if np.min(dataframe[col]) < 0:
+			dataframe[col] = dataframe[col] + 1
+		dataframe[col] = np.log(dataframe[col])
+	#scrubbed['playcount'] = np.log(scrubbed['playcount'] + 2)
+	#scrubbed['use_diff_days'] = np.log(scrubbed['use_diff_days'] + 1)
+
 def scrub(dataframe):
 	'''
-	scrubs the data set using the time, na, and drop functions
+	scrubs the data set using the time, na,drop functions, and logtransform
+	functions
 	'''
 	# if a drop list was not passed, use defaults
 	#presence = ['country','gender']
@@ -89,6 +102,8 @@ def scrub(dataframe):
 	d = time(d)
 	#d = drop(d, to_drop)
 	d = reshape(d)
+	tolog = ['playcount', 'use_diff_days']
+	d = logtransform(d, to_transform = tolog)
 	return d
 
 def make_encoder(test, train):
@@ -163,37 +178,6 @@ def make_predictions(dataframe, model = False):
 	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
 	return solutions, predictions, sv_score
 
-def data(to_drop = None, encode = False, reencode = False):
-	'''
-	loads in the data set
-	'''
-	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
-	# create a random list to index the train and test set)
-	if encode:
-		train = scrub(df1.ix[train_index])
-		test = scrub(df1.ix[test_index])
-		if reencode:
-			make_encoder(train, test)
-		train = dencode(train)
-		test = dencode(test)
-	else:
-		scrubbed = scrub(df1)
-		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
-		break_point = int(len(ramsam)*.7))
-		train_index = ramsam[0:break_point]
-		test_index = ramsam[break_point:]
-		train = scrubbed.ix[train_index]
-		test = scrubbed.ix[test_index]
-		#train = df1.ix[train_index]
-		#test = df1.ix[test_index]
-	return train, test
-
 def reshape(dataframe, to_drop = None):
 	genres = []
 	colset1 = ['tag1', 'tag2','tag3', 'tag4', 'tag5']
@@ -227,13 +211,39 @@ def reshape(dataframe, to_drop = None):
 	z = pd.merge(x, dataframe, left_index = True, right_index = True).applymap(float)
 	return z
 
-
-
-
-
-
-
-
-
+def data(to_drop = None, encode = False, reencode = False):
+	'''
+	loads in the data set
+	'''
+	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
+	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
+	# create a random list to index the train and test set)
+	if encode:
+		train = scrub(df1.ix[train_index])
+		test = scrub(df1.ix[test_index])
+		if reencode:
+			make_encoder(train, test)
+		train = dencode(train)
+		test = dencode(test)
+	else:
+		scrubbed = scrub(df1)
+		norm = StandardScaler()
+		norm.fit(scrubbed)
+		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
+		break_point = int(len(ramsam)*.7)
+		train_index = ramsam[0:break_point]
+		test_index = ramsam[break_point:]
+		train = norm.transform(scrubbed.ix[train_index])
+		test = norm.transform(scrubbed.ix[test_index])
+		train = pd.DataFrame(train, index = train_index, columns = scrubbed.columns)
+		test = pd.DataFrame(test, index = test_index, columns = scrubbed.columns)
+		#train = df1.ix[train_index]
+		#test = df1.ix[test_index]
+	return train, test, scrubbed.ix[train_index]
 
 
