@@ -18,21 +18,21 @@ def time(dataframe):
 	time = ['registered','recent_date1','recent_date2','recent_date3',
 			'recent_date4','recent_date5']
 	for col in time:
-	    new_series = []
-	    hours = []
-	    for item in dataframe[col]:
-	        if pd.isnull(item):
-	            new_series.append(item)
-	            continue
-	        new_series.append(datetime.fromtimestamp(item))
-	    dataframe[col] = new_series
-	    if col == 'registered':
-	    	hours = []
-	    	for item in new_series:
-	    		if pd.isnull(item):
-	    			hours.append(item)
-	    		hours.append(item.strftime('%H'))
-	    	dataframe['hour_registered'] = np.array(hours, dtype = float)
+		new_series = []
+		hours = []
+		for item in dataframe[col]:
+			if pd.isnull(item):
+				new_series.append(item)
+				continue
+			new_series.append(datetime.fromtimestamp(item))
+		dataframe[col] = new_series
+		if col == 'registered':
+			hours = []
+			for item in new_series:
+				if pd.isnull(item):
+					hours.append(item)
+				hours.append(item.strftime('%H'))
+			dataframe['hour_registered'] = np.array(hours, dtype = float)
 	avg_difference = []
 	use_diff = []
 	time = np.array(time)
@@ -155,28 +155,28 @@ def dencode(dataframe, one_off = False, decode = False):
 			result[col] = encoder.transform(str_values)
 	return result
 
-def growforest(encoded_df, num_trees, to_pickle = False):
+def growforest(training, target, num_trees, to_pickle = False):
 	# encoded_target = encoded_df['subscriber']
 	# encoded_training = encoded_df.drop('subscriber', axis = 1)
 	m = RandomForestClassifier(n_estimators=num_trees, oob_score=True)
-	mod = m.fit(encoded_training, encoded_target)
+	mod = m.fit(training, target)
 	if to_pickle:
 		pickle.dump(mod, file('rfmodel.pkl'))
 		return
-	features = zip(mod.feature_importances_, encoded_training.columns)
+	features = zip(mod.feature_importances_, training.columns)
 	features = sorted(features, reverse=True)#, key = lambda x:features[0])
 	return mod, features
 
 
-def make_predictions(dataframe, model = False):
+def make_predictions(dataframe, solutions, model = False):
 	'''
 	takes a data frame or a row from a data frame and 
 	predicts the outcome
 	'''
 	if not model:
 		model = pickle.load(file('rfmodel.pkl'))
-	solutions = dataframe['subscriber']
-	predictions = model.predict(dataframe.drop('subscriber', axis = 1))
+	#solutions = dataframe['subscriber']
+	predictions = model.predict(dataframe)
 	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
 	return solutions, predictions, sv_score
 
@@ -186,7 +186,7 @@ def reshape(dataframe, to_drop = None):
 	colset2 = ['top_count1', 'top_count2','top_count3', 'top_count4','top_count5']
 	zipped = zip(colset1, colset2)
 	for col1, col2 in zipped:
-	    genres += list(dataframe[col1])
+		genres += list(dataframe[col1])
 	unique_genres = list(set(genres))
 	genre_df = pd.DataFrame(columns = unique_genres, index = dataframe.index)
 	genre_df = genre_df.fillna(0)
@@ -256,6 +256,32 @@ def data(to_drop = None, encode = False, reencode = False):
 		normtest = norm.transform(test)
 		normtrain = pd.DataFrame(normtrain, index = train_index, columns = scrubbed.columns)
 		normtest = pd.DataFrame(normtest, index = test_index, columns = scrubbed.columns)
-	return normtrain, targets, normtest, solutions
+	return normtrain, targets, normtest, solutions, test
+
+def balance(n, train, target):
+	subscriber_index = target[target == 1].index
+	user_index = target[target == 0].index
+	# randomly select users
+	chosen = sample(list(user_index), len(subscriber_index)*n)
+	# create a new training set with equal parts subsriber and users
+	under_trained = train.ix[list(subscriber_index) + chosen]
+	under_target = target.ix[list(subscriber_index) + list(chosen)]
+	# sanity checky
+	print sum(under_trained.index != under_target.index)
+	return under_trained, under_target
+
+def main():
+	normtrain, targets, normtest, solutions, test = data()
+	under_train, under_target = balance(1, normtrain, targets)
+	mod, features = growforest(under_train, under_target)
+	s, predictions, score = make_predictions(test, solutions)
+	print score, nb.score(test, solution)
+	print metrics.confusion_matrix(solutions, preds)
+	probs = pd.DataFrame(mod.predict_proba(test))[1]
+	test[probs] = probs
+	return test
+
+
+
 
 
