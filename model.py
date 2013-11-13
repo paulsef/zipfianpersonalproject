@@ -85,11 +85,12 @@ def logtransform(dataframe, to_transform = []):
 	takes the log transform of certain variables in the dataset
 	'''
 	for col in to_transform:
-		if np.min(dataframe[col]) < 0:
-			dataframe[col] = dataframe[col] + 1
+		if np.min(dataframe[col]) <= 0:
+			dataframe[col] = dataframe[col] + (-1 * np.min(dataframe[col])) + 1
 		dataframe[col] = np.log(dataframe[col])
 	#scrubbed['playcount'] = np.log(scrubbed['playcount'] + 2)
 	#scrubbed['use_diff_days'] = np.log(scrubbed['use_diff_days'] + 1)
+	return dataframe
 
 def scrub(dataframe):
 	'''
@@ -102,7 +103,8 @@ def scrub(dataframe):
 	d = time(d)
 	#d = drop(d, to_drop)
 	d = reshape(d)
-	tolog = ['playcount', 'use_diff_days']
+	tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
+			'top_count4','top_count5']
 	d = logtransform(d, to_transform = tolog)
 	return d
 
@@ -232,6 +234,8 @@ def data(to_drop = None, encode = False, reencode = False):
 		test = dencode(test)
 	else:
 		scrubbed = scrub(df1)
+		scrubbed['playcount'] = np.log(scrubbed['playcount'] + 2)
+		scrubbed['use_diff_days'] = np.log(scrubbed['use_diff_days'] + 1)
 		norm = StandardScaler()
 		norm.fit(scrubbed)
 		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
