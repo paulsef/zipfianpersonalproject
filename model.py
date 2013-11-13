@@ -195,6 +195,10 @@ def reshape(dataframe, to_drop = None):
 			g = dataframe[col1][row]
 			genre_df[g][row] += dataframe[col2][row]
 	for row in genre_df.index:
+		if dataframe['playcount'][row] <= 0:
+			dataframe = dataframe.drop(row)
+			genre_df = genre_df.drop(row)
+			continue
 		genre_df.ix[row] = genre_df.ix[row]/dataframe['playcount'][row]
 	genre_df = genre_df.applymap(float)
 	dummied1 = pd.get_dummies(dataframe['country'])
