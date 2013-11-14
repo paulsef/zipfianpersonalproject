@@ -5,9 +5,11 @@ import pickle
 import random 
 import copy
 import math
+from random import sample
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import Imputer, LabelEncoder, StandardScaler, Normalizer
+from sklearn import metrics
 
 import pdb
 
@@ -217,6 +219,7 @@ def reshape(dataframe, to_drop = None):
 	z = pd.merge(x, dataframe, left_index = True, right_index = True).applymap(float)
 	return z
 
+
 def data(to_drop = None, encode = False, reencode = False):
 	'''
 	loads in the data set
@@ -256,6 +259,7 @@ def data(to_drop = None, encode = False, reencode = False):
 		normtest = norm.transform(test)
 		normtrain = pd.DataFrame(normtrain, index = train_index, columns = scrubbed.columns)
 		normtest = pd.DataFrame(normtest, index = test_index, columns = scrubbed.columns)
+	pickle.dump(norm,file('standarizer.pkl', 'w'))
 	return normtrain, targets, normtest, solutions, test
 
 def balance(n, train, target):
@@ -271,16 +275,29 @@ def balance(n, train, target):
 	return under_trained, under_target
 
 def main():
+	# load the data
 	normtrain, targets, normtest, solutions, test = data()
+	# undersample
 	under_train, under_target = balance(1, normtrain, targets)
-	mod, features = growforest(under_train, under_target)
-	s, predictions, score = make_predictions(test, solutions)
-	print score, nb.score(test, solution)
-	print metrics.confusion_matrix(solutions, preds)
+	# if something terrible happened
+	if len(np.intersect1d(list(under_train.index), list(test.index))) > 0:
+		pdb.set_trace()
+	# make the model
+	mod, features = growforest(under_train, under_target, 100)
+	# make predictions
+	s, predictions, score = make_predictions(test, solutions, model = mod)
+	print score, mod.score(test, solutions)
+	print metrics.confusion_matrix(solutions, predictions)
 	probs = pd.DataFrame(mod.predict_proba(test))[1]
-	test[probs] = probs
-	return test
-
+	norm = pickle.load(file('standarizer.pkl'))
+	test = pd.DataFrame(norm.inverse_transform(test), index = test.index, columns = test.columns)
+	test['probs'] = list(probs)
+	test['ids'] = list(test.index)
+	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
+	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
+	# 	'id'])
+	test.to_csv('final_test.csv', sep = ',',index = False, na_rep = "None")
+	return test, features
 
 
 
