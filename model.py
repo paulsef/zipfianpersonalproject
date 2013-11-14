@@ -309,6 +309,7 @@ def main():
 	test['probs'] = list(probs)
 	test['ids'] = list(test.index)
 	test['top_genres'] = list(top_test_genres)
+	test['subscriber'] = list(solutions)
 	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
 	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
 	# 	'id'])

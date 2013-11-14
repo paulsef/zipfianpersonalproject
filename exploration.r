@@ -81,6 +81,9 @@ sorted <- subs[order(subs$probs, decreasing = TRUE) , ]
 
 f <- final[(final$rock > .1 | final$indie > .1 | final$electronic > .1 |
             final$folk > .1 | final$jazz > .1),c('playcount','probs', 'hour_registered','top_genres')]
+f$modded <- f$top_genres
+change <- function(x){if (!(x %in% c('rock', 'indie', 'electronic')) 'other' else x}
+f$modded <- sapply(f$top_genre, change)
 f <- sorted[((sorted$top_genres == 'rock' | sorted$top_genres == 'indie' | sorted$top_genres == 'electronic')&
               (sorted$avg_diff_hours <1000)), c('playcount','probs', 'avg_diff_hours','top_genres')]
 melted <- melt(data=f, id.vars=c('playcount', 'probs', 'use_diff_days'))
@@ -88,7 +91,17 @@ melted <- melt(data=f, id.vars=c('playcount', 'probs', 'use_diff_days'))
 ggplot(f) + aes(x = f$avg_diff_hours, y = f$playcount, size = f$probs, color = f$top_genres) + geom_jitter() +
   scale_x_log10()
 
-
-final$top_genres
-
+ggplot(final) + aes(x = final$avg_diff_hours, y = final$playcount, size = final$probs, color = factor(final$subscriber)) + geom_jitter() +
+  scale_x_log10()
+ggplot(final) + aes(x = final$playcount, y = final$age, size = final$probs, color = factor(final$subscriber)) + geom_jitter() +
+  scale_x_log10()
+ggplot(final) + aes(x = final$hour_registered, y = final$probs, color = factor(final$subscriber)) + 
+  geom_point()#,  size = final$probs,) + geom_jitter() #+
+  #scale_x_log10()
+  
+counts <- as.data.frame(table(dcom$subscriber))
+counts$Var1 <- c('User', 'Subscriber')
+ggplot(counts) + aes(x = counts$Var1, y=counts$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
+  theme(plot.background = element_rect(fill='#D20039'), panel.background = element_rect(fill='#D20039'),
+        axis.text=element_text(colour="white"), axis.title.y = element_text(color = 'white')) + xlab('') + ylab('Frequency')
 
