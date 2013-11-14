@@ -12,7 +12,7 @@ from sklearn import tree
 from sklearn.preprocessing import Imputer, LabelEncoder, StandardScaler, Normalizer
 from sklearn.externals.six import StringIO  
 from sklearn import metrics
-
+import pydot
 import pdb
 
 def make_encoder(test, train):
@@ -167,24 +167,28 @@ def reshape(dataframe, to_drop = None, to_keep = None):
 	colset1 = ['tag1', 'tag2','tag3', 'tag4', 'tag5']
 	colset2 = ['top_count1', 'top_count2','top_count3', 'top_count4','top_count5']
 	zipped = zip(colset1, colset2)
+	top_genres = dataframe['tag1']
 	for col1, col2 in zipped:
 		genres += list(dataframe[col1])
 	unique_genres = list(set(genres))
-	genre_df = pd.DataFrame(columns = unique_genres, index = dataframe.index)
-	genre_df = genre_df.fillna(0)
-	for col1, col2 in zipped:
-		for row in dataframe.index:
-			g = dataframe[col1][row]
-			genre_df[g][row] += dataframe[col2][row]
-	for row in genre_df.index:
-		if dataframe['playcount'][row] <= 0:
-			dataframe = dataframe.drop(row)
-			genre_df = genre_df.drop(row)
-			continue
-		genre_df.ix[row] = genre_df.ix[row]/dataframe['playcount'][row]
-	genre_df = genre_df.applymap(float)
-	dummied1 = pd.get_dummies(dataframe['country'])
-	top_genres = dataframe['tag1']
+	if not to_keep:
+		genre_df = pd.DataFrame(columns = unique_genres, index = dataframe.index)
+		genre_df = genre_df.fillna(0)
+		for col1, col2 in zipped:
+			for row in dataframe.index:
+				g = dataframe[col1][row]
+				genre_df[g][row] += dataframe[col2][row]
+		for row in genre_df.index:
+			if dataframe['playcount'][row] <= 0:
+				dataframe = dataframe.drop(row)
+				genre_df = genre_df.drop(row)
+				continue
+			genre_df.ix[row] = genre_df.ix[row]/dataframe['playcount'][row]
+		genre_df = genre_df.applymap(float)
+		dummied1 = pd.get_dummies(dataframe['country'])
+	else:
+		dummied1 = pd.DataFrame(index = dataframe.index)
+		genre_df = pd.DataFrame(index = dataframe.index)
 	if not to_drop:
 		to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
 					'recent_date5','registered', 'id','name' , 'recent_artist1', 
@@ -257,7 +261,7 @@ def balance(n, train, target):
 	under_trained = train.ix[list(subscriber_index) + chosen]
 	under_target = target.ix[list(subscriber_index) + list(chosen)]
 	# sanity checky
-	print 'sanity check' + str(sum(under_trained.index != under_target.index))
+	print 'sanity check ' + str(sum(under_trained.index != under_target.index))
 	return under_trained, under_target
 
 def growforest(training, target, num_trees, to_pickle = False):
@@ -315,13 +319,13 @@ def print_tree():
 	to_keep = ['playcount','top_count4','top_count5','top_count2','top_count1',
 			'top_count3','avg_diff_hours','age','hour_registered','subscriber']
 	normtrain, targets, normtest, solutions, test, top_test_genres = data(to_keep = to_keep)
-	normtrain, targets = model.balance(1, normtrain, targets)
-	dectree = tree.DecisionTreeClassifier()
+	normtrain, targets = balance(1, normtrain, targets)
+	dectree = tree.DecisionTreeClassifier(min_samples_split= 10, min_samples_leaf = 2, max_depth =5)
 	dectree.fit(normtrain, targets)
-	dot_data = StringIO.StringIO() 
+	dot_data = StringIO() 
 	tree.export_graphviz(dectree, out_file=dot_data) 
 	graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
-	graph.write_pdf("iris.pdf") 
+	graph.write_pdf("example_tree.pdf") 
 
 
 if __name__ == '__main__':
