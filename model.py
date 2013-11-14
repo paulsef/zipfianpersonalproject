@@ -8,7 +8,9 @@ import math
 from random import sample
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
+from sklearn import tree
 from sklearn.preprocessing import Imputer, LabelEncoder, StandardScaler, Normalizer
+from sklearn.externals.six import StringIO  
 from sklearn import metrics
 
 import pdb
@@ -134,9 +136,12 @@ def logtransform(dataframe, to_transform = []):
 	takes the log transform of certain variables in the dataset
 	'''
 	for col in to_transform:
-		if np.min(dataframe[col]) <= 0:
-			dataframe[col] = dataframe[col] + (-1 * np.min(dataframe[col])) + 1
-		dataframe[col] = np.log(dataframe[col])
+		try:
+			if np.min(dataframe[col]) <= 0:
+					dataframe[col] = dataframe[col] + (-1 * np.min(dataframe[col])) + 1
+			dataframe[col] = np.log(dataframe[col])
+		except(KeyError):
+			continue
 	#scrubbed['playcount'] = np.log(scrubbed['playcount'] + 2)
 	#scrubbed['use_diff_days'] = np.log(scrubbed['use_diff_days'] + 1)
 	return dataframe
@@ -186,9 +191,6 @@ def reshape(dataframe, to_drop = None, to_keep = None):
 					'recent_artist2', 'recent_artist3', 'recent_artist4', 'recent_artist5',
 					'recent_track1','recent_track2' ,'recent_track3', 'recent_track4','recent_track5',
 					'top_artist1','top_artist2','top_artist3','top_artist4','top_artist5', 'country']
-	elif to_keep:
-		to_drop = list(set(list(dataframe.columns)) - set(to_keep))
-	pdb.set_trace()
 	dataframe = drop(dataframe, to_drop + colset1 + colset1)
 	genre_df.rename(columns = {'BG':'BG.genre'}, inplace = True)
 	#concatenated = pd.concat([dataframe, genre_df, dummied1], axis = 1, ignore_index = True).applymap(float)
@@ -196,6 +198,9 @@ def reshape(dataframe, to_drop = None, to_keep = None):
 	#appended = dataframe.append(genre_df).append(dummied1)
 	x = pd.merge(dummied1, genre_df, left_index = True, right_index = True)
 	z = pd.merge(x, dataframe, left_index = True, right_index = True).applymap(float)
+	if to_keep:
+		to_drop = list(set(list(z.columns)) - set(to_keep))
+		z = drop(z, to_drop)
 	return z, top_genres
 
 def data(to_drop = None, to_keep = None, encode = False, reencode = False):
@@ -203,11 +208,11 @@ def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 	loads in the data set
 	'''
 	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
 	# create a random list to index the train and test set)
 	if encode:
@@ -252,7 +257,7 @@ def balance(n, train, target):
 	under_trained = train.ix[list(subscriber_index) + chosen]
 	under_target = target.ix[list(subscriber_index) + list(chosen)]
 	# sanity checky
-	print sum(under_trained.index != under_target.index)
+	print 'sanity check' + str(sum(under_trained.index != under_target.index))
 	return under_trained, under_target
 
 def growforest(training, target, num_trees, to_pickle = False):
@@ -306,20 +311,23 @@ def main():
 	test.to_csv('final_test.csv', sep = ',',index = False, na_rep = "None")
 	return test, features
 
+def print_tree():
+	to_keep = ['playcount','top_count4','top_count5','top_count2','top_count1',
+			'top_count3','avg_diff_hours','age','hour_registered','subscriber']
+	normtrain, targets, normtest, solutions, test, top_test_genres = data(to_keep = to_keep)
+	normtrain, targets = model.balance(1, normtrain, targets)
+	dectree = tree.DecisionTreeClassifier()
+	dectree.fit(normtrain, targets)
+	dot_data = StringIO.StringIO() 
+	tree.export_graphviz(dectree, out_file=dot_data) 
+	graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
+	graph.write_pdf("iris.pdf") 
+
+
 if __name__ == '__main__':
 	main()
 
 
-['playcount',
-'top_count4',
-'top_count5',
-'top_count2',
-'top_count1',
-'top_count3',
-'avg_diff_hours',
-'age',
-'hour_registered',
-'subscriber']
 
 
 
