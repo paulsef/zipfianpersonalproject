@@ -13,6 +13,53 @@ from sklearn import metrics
 
 import pdb
 
+def make_encoder(test, train):
+	'''
+	creates a general label encoder for every
+	unique value of all categorical variables
+	'''
+	# load in the whole dataset
+	# df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
+	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	# scrube the data
+	# df1 = scrub(df1)
+	# initialize the encoder and a list to store all categorical values
+	df1 = train
+	df1 = train.append(test, ignore_index = True)
+	encoder = LabelEncoder()
+	values = []
+	cols = []
+	for col in df1:
+		cols.append(col)
+		for value in df1[col]:
+			values.append(value)
+	encoder.fit(values)
+	pickle.dump(encoder, file('./encoder.pkl', 'w'))
+
+def dencode(dataframe, one_off = False, decode = False):
+	'''
+	uses sklearn to encode all values as integers/floats
+	returns a dictionary containing sklearn encoding objects
+	and encoded data frame
+	'''
+	encoder = pickle.load(file('./encoder.pkl'))
+	if one_off:
+		if decode:
+			return encoder.inverse_transform([dataframe])
+		else:
+			return encoder.transform([dataframe])
+	result = pd.DataFrame(index = dataframe.index)
+	for col in dataframe:
+		if decode:
+			result[col] = encoder.inverse_transform(dataframe[col])
+		else:
+			str_values = [str(i) for i in dataframe[col]]
+			result[col] = encoder.transform(str_values)
+	return result
+
 def time(dataframe):
 	'''
 	converts columns to time
@@ -94,7 +141,7 @@ def logtransform(dataframe, to_transform = []):
 	#scrubbed['use_diff_days'] = np.log(scrubbed['use_diff_days'] + 1)
 	return dataframe
 
-def scrub(dataframe):
+def scrub(dataframe, to_drop = None, to_keep = None):
 	'''
 	scrubs the data set using the time, na,drop functions, and logtransform
 	functions
@@ -104,85 +151,13 @@ def scrub(dataframe):
 	d = nas(dataframe)#, presence)
 	d = time(d)
 	#d = drop(d, to_drop)
-	d, top_genres = reshape(d)
+	d, top_genres = reshape(d, to_drop, to_keep)
 	tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
 			'top_count4','top_count5']
 	d = logtransform(d, to_transform = tolog)
 	return d, top_genres
 
-def make_encoder(test, train):
-	'''
-	creates a general label encoder for every
-	unique value of all categorical variables
-	'''
-	# load in the whole dataset
-	# df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	# scrube the data
-	# df1 = scrub(df1)
-	# initialize the encoder and a list to store all categorical values
-	df1 = train
-	df1 = train.append(test, ignore_index = True)
-	encoder = LabelEncoder()
-	values = []
-	cols = []
-	for col in df1:
-		cols.append(col)
-		for value in df1[col]:
-			values.append(value)
-	encoder.fit(values)
-	pickle.dump(encoder, file('./encoder.pkl', 'w'))
-
-def dencode(dataframe, one_off = False, decode = False):
-	'''
-	uses sklearn to encode all values as integers/floats
-	returns a dictionary containing sklearn encoding objects
-	and encoded data frame
-	'''
-	encoder = pickle.load(file('./encoder.pkl'))
-	if one_off:
-		if decode:
-			return encoder.inverse_transform([dataframe])
-		else:
-			return encoder.transform([dataframe])
-	result = pd.DataFrame(index = dataframe.index)
-	for col in dataframe:
-		if decode:
-			result[col] = encoder.inverse_transform(dataframe[col])
-		else:
-			str_values = [str(i) for i in dataframe[col]]
-			result[col] = encoder.transform(str_values)
-	return result
-
-def growforest(training, target, num_trees, to_pickle = False):
-	# encoded_target = encoded_df['subscriber']
-	# encoded_training = encoded_df.drop('subscriber', axis = 1)
-	m = RandomForestClassifier(n_estimators=num_trees, oob_score=True)
-	mod = m.fit(training, target)
-	if to_pickle:
-		pickle.dump(mod, file('rfmodel.pkl'))
-		return
-	features = zip(mod.feature_importances_, training.columns)
-	features = sorted(features, reverse=True)#, key = lambda x:features[0])
-	return mod, features
-
-
-def make_predictions(dataframe, solutions, model = False):
-	'''
-	takes a data frame or a row from a data frame and 
-	predicts the outcome
-	'''
-	if not model:
-		model = pickle.load(file('rfmodel.pkl'))
-	#solutions = dataframe['subscriber']
-	predictions = model.predict(dataframe)
-	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
-	return solutions, predictions, sv_score
-
-def reshape(dataframe, to_drop = None):
+def reshape(dataframe, to_drop = None, to_keep = None):
 	genres = []
 	colset1 = ['tag1', 'tag2','tag3', 'tag4', 'tag5']
 	colset2 = ['top_count1', 'top_count2','top_count3', 'top_count4','top_count5']
@@ -206,11 +181,14 @@ def reshape(dataframe, to_drop = None):
 	dummied1 = pd.get_dummies(dataframe['country'])
 	top_genres = dataframe['tag1']
 	if not to_drop:
-			to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
-						'recent_date5','registered', 'id','name' , 'recent_artist1', 
-						'recent_artist2', 'recent_artist3', 'recent_artist4', 'recent_artist5',
-						'recent_track1','recent_track2' ,'recent_track3', 'recent_track4','recent_track5',
-						'top_artist1','top_artist2','top_artist3','top_artist4','top_artist5', 'country']
+		to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
+					'recent_date5','registered', 'id','name' , 'recent_artist1', 
+					'recent_artist2', 'recent_artist3', 'recent_artist4', 'recent_artist5',
+					'recent_track1','recent_track2' ,'recent_track3', 'recent_track4','recent_track5',
+					'top_artist1','top_artist2','top_artist3','top_artist4','top_artist5', 'country']
+	elif to_keep:
+		to_drop = list(set(list(dataframe.columns)) - set(to_keep))
+	pdb.set_trace()
 	dataframe = drop(dataframe, to_drop + colset1 + colset1)
 	genre_df.rename(columns = {'BG':'BG.genre'}, inplace = True)
 	#concatenated = pd.concat([dataframe, genre_df, dummied1], axis = 1, ignore_index = True).applymap(float)
@@ -220,17 +198,16 @@ def reshape(dataframe, to_drop = None):
 	z = pd.merge(x, dataframe, left_index = True, right_index = True).applymap(float)
 	return z, top_genres
 
-
-def data(to_drop = None, encode = False, reencode = False):
+def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 	'''
 	loads in the data set
 	'''
 	df1 = pd.read_csv('ssvout/0.ssv', na_values='None')
-	df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/5000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/10000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
+	# df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
 	# create a random list to index the train and test set)
 	if encode:
@@ -241,7 +218,7 @@ def data(to_drop = None, encode = False, reencode = False):
 		train = dencode(train)
 		test = dencode(test)
 	else:
-		scrubbed, top_genres = scrub(df1)
+		scrubbed, top_genres = scrub(df1, to_drop, to_keep)
 		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
 		break_point = int(len(ramsam)*.7)
 		train_index = ramsam[0:break_point]
@@ -278,6 +255,31 @@ def balance(n, train, target):
 	print sum(under_trained.index != under_target.index)
 	return under_trained, under_target
 
+def growforest(training, target, num_trees, to_pickle = False):
+	# encoded_target = encoded_df['subscriber']
+	# encoded_training = encoded_df.drop('subscriber', axis = 1)
+	m = RandomForestClassifier(n_estimators=num_trees, oob_score=True)
+	mod = m.fit(training, target)
+	if to_pickle:
+		pickle.dump(mod, file('rfmodel.pkl'))
+		return
+	features = zip(mod.feature_importances_, training.columns)
+	features = sorted(features, reverse=True)#, key = lambda x:features[0])
+	return mod, features
+
+
+def make_predictions(dataframe, solutions, model = False):
+	'''
+	takes a data frame or a row from a data frame and 
+	predicts the outcome
+	'''
+	if not model:
+		model = pickle.load(file('rfmodel.pkl'))
+	#solutions = dataframe['subscriber']
+	predictions = model.predict(dataframe)
+	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
+	return solutions, predictions, sv_score
+
 def main():
 	# load the data
 	normtrain, targets, normtest, solutions, test, top_test_genres = data()
@@ -306,5 +308,18 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+
+['playcount',
+'top_count4',
+'top_count5',
+'top_count2',
+'top_count1',
+'top_count3',
+'avg_diff_hours',
+'age',
+'hour_registered',
+'subscriber']
+
 
 

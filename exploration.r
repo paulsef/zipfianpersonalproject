@@ -72,3 +72,23 @@ ggplot(user, aes(x = avg_diff)) + geom_histogram()
 melted <- melt(data=dcom[,c('friend_sub', 'subscriber')], id.vars='subscriber',value.name='friend_sub', )
 ggplot(dcom) + aes(x = dcom$friend_count, y= dcom$friend_sub, color = dcom$subscriber) +
   geom_jitter() + scale_x_log10() + scale_y_log10()#geom_point(position = jitter) 
+
+
+final <- read.table('final_test.csv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
+                  comment.char = "", quote = "")
+subs <- final[final$probs > .60,]
+sorted <- subs[order(subs$probs, decreasing = TRUE) , ]
+
+f <- final[(final$rock > .1 | final$indie > .1 | final$electronic > .1 |
+            final$folk > .1 | final$jazz > .1),c('playcount','probs', 'hour_registered','top_genres')]
+f <- sorted[((sorted$top_genres == 'rock' | sorted$top_genres == 'indie' | sorted$top_genres == 'electronic')&
+              (sorted$avg_diff_hours <1000)), c('playcount','probs', 'avg_diff_hours','top_genres')]
+melted <- melt(data=f, id.vars=c('playcount', 'probs', 'use_diff_days'))
+
+ggplot(f) + aes(x = f$avg_diff_hours, y = f$playcount, size = f$probs, color = f$top_genres) + geom_jitter() +
+  scale_x_log10()
+
+
+final$top_genres
+
+
