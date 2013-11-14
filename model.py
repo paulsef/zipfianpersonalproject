@@ -104,11 +104,11 @@ def scrub(dataframe):
 	d = nas(dataframe)#, presence)
 	d = time(d)
 	#d = drop(d, to_drop)
-	d = reshape(d)
+	d, top_genres = reshape(d)
 	tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
 			'top_count4','top_count5']
 	d = logtransform(d, to_transform = tolog)
-	return d
+	return d, top_genres
 
 def make_encoder(test, train):
 	'''
@@ -204,6 +204,7 @@ def reshape(dataframe, to_drop = None):
 		genre_df.ix[row] = genre_df.ix[row]/dataframe['playcount'][row]
 	genre_df = genre_df.applymap(float)
 	dummied1 = pd.get_dummies(dataframe['country'])
+	top_genres = dataframe['tag1']
 	if not to_drop:
 			to_drop = ['recent_date1','recent_date2','recent_date3','recent_date4',
 						'recent_date5','registered', 'id','name' , 'recent_artist1', 
@@ -217,7 +218,7 @@ def reshape(dataframe, to_drop = None):
 	#appended = dataframe.append(genre_df).append(dummied1)
 	x = pd.merge(dummied1, genre_df, left_index = True, right_index = True)
 	z = pd.merge(x, dataframe, left_index = True, right_index = True).applymap(float)
-	return z
+	return z, top_genres
 
 
 def data(to_drop = None, encode = False, reencode = False):
@@ -240,11 +241,14 @@ def data(to_drop = None, encode = False, reencode = False):
 		train = dencode(train)
 		test = dencode(test)
 	else:
-		scrubbed = scrub(df1)
+		scrubbed, top_genres = scrub(df1)
 		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
 		break_point = int(len(ramsam)*.7)
 		train_index = ramsam[0:break_point]
 		test_index = ramsam[break_point:]
+		# report the top genres
+		top_train_genres = top_genres.ix[train_index]
+		top_test_genres = top_genres.ix[test_index]
 		# extract the target variables
 		targets = scrubbed.ix[train_index, 'subscriber']
 		solutions = scrubbed.ix[test_index, 'subscriber']
@@ -260,7 +264,7 @@ def data(to_drop = None, encode = False, reencode = False):
 		normtrain = pd.DataFrame(normtrain, index = train_index, columns = scrubbed.columns)
 		normtest = pd.DataFrame(normtest, index = test_index, columns = scrubbed.columns)
 	pickle.dump(norm,file('standarizer.pkl', 'w'))
-	return normtrain, targets, normtest, solutions, test
+	return normtrain, targets, normtest, solutions, test, top_test_genres
 
 def balance(n, train, target):
 	subscriber_index = target[target == 1].index
@@ -276,7 +280,7 @@ def balance(n, train, target):
 
 def main():
 	# load the data
-	normtrain, targets, normtest, solutions, test = data()
+	normtrain, targets, normtest, solutions, test, top_test_genres = data()
 	# undersample
 	under_train, under_target = balance(1, normtrain, targets)
 	# if something terrible happened
@@ -293,12 +297,14 @@ def main():
 	test = pd.DataFrame(norm.inverse_transform(test), index = test.index, columns = test.columns)
 	test['probs'] = list(probs)
 	test['ids'] = list(test.index)
+	test['top_genres'] = list(top_test_genres)
 	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
 	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
 	# 	'id'])
 	test.to_csv('final_test.csv', sep = ',',index = False, na_rep = "None")
 	return test, features
 
-
+if __name__ == '__main__':
+	main()
 
 
