@@ -319,11 +319,14 @@ def print_tree():
 	to_keep = ['playcount','top_count4','top_count5','top_count2','top_count1',
 			'top_count3','avg_diff_hours','age','hour_registered','subscriber']
 	normtrain, targets, normtest, solutions, test, top_test_genres = data(to_keep = to_keep)
+	norm = pickle.load(file('standarizer.pkl'))
+	normtrain = pd.DataFrame(norm.inverse_transform(normtrain), 
+							index = normtrain.index, columns = normtrain.columns)
 	normtrain, targets = balance(1, normtrain, targets)
 	dectree = tree.DecisionTreeClassifier(min_samples_split= 10, min_samples_leaf = 2, max_depth =5)
 	dectree.fit(normtrain, targets)
 	dot_data = StringIO() 
-	tree.export_graphviz(dectree, out_file=dot_data) 
+	tree.export_graphviz(dectree, out_file=dot_data, feature_names = normtrain.columns) 
 	graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
 	graph.write_pdf("example_tree.pdf") 
 
