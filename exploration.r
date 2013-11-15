@@ -111,9 +111,10 @@ dev.off()
 
 playcount_hist <- ggplot(dcom) + aes(x = dcom$playcount) + geom_histogram(fill = 'white') + scale_y_sqrt() + scale_x_sqrt() + 
   theme(plot.background = element_rect(fill='#D20039'), 
+        panel.border = element_blank(),
         panel.background = element_rect(fill='#D20039'),
         axis.text=element_text(colour="white"), 
-        axis.title = element_text(color = 'white'), 
+        axis.title = element_text(color = 'white', face = 'bold',size=20), 
         panel.grid.major = element_blank(),  
         panel.grid.minor = element_blank()) + 
   xlab('Playcount') + ylab('Frequency')
@@ -124,6 +125,7 @@ dev.off()
 regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcount, size = final$probs, color = factor(final$subscriber)) +
   geom_jitter() + theme(plot.background = element_rect(fill='#D20039'), 
                         panel.background = element_rect(fill='#D20039'),
+                        panel.border = element_blank(),
                         axis.text=element_text(colour="white"), 
                         axis.title = element_text(color = "white"),
                         legend.background = element_rect(fill = '#D20039'),
