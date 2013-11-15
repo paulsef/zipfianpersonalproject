@@ -100,14 +100,33 @@ ggplot(final) + aes(x = final$hour_registered, y = final$probs, color = factor(f
   geom_point()#,  size = final$probs,) + geom_jitter() #+
   #scale_x_log10()
   
-counts <- as.data.frame(table(dcom$subscriber))
+counts <- as.data.frame(table(dcom$subscriber))]
 counts$Var1 <- c('User', 'Subscriber')
 count_plot <- ggplot(counts) + aes(x = counts$Var1, y=counts$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
-  theme(plot.background = element_rect(fill='#D20039'), panel.background = element_rect(fill='#D20039'),
-        axis.text=element_text(colour="white"), axis.title.y = element_text(color = 'white'), panel.border = theme_blank()) + 
+  theme(plot.background = element_rect(fill='#D20039'), 
+        panel.background = element_rect(fill='#D20039'),
+        panel.grid.major.x = element_blank(),
+        axis.text=element_text(colour="white"), 
+        axis.title.y = element_text(color = 'white'), 
+        panel.border = element_blank()) + 
   xlab('') + ylab('Frequency')
+count_plot
 ggsave(filename='./presentation/uservsubs.jpg',plot=count_plot)
 dev.off()
+
+fake <- counts
+fake$Freq <- c(604,604)
+fake_plot <- ggplot(fake) + aes(x = fake$Var1, y=fake$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
+  theme(plot.background = element_rect(fill='#D20039'), 
+        panel.background = element_rect(fill='#D20039'),
+        panel.grid.major.x = element_blank(),
+        axis.text=element_text(colour="white"), 
+        axis.title.y = element_text(color = 'white'), 
+        panel.border = element_blank()) + 
+  xlab('') + ylab('Frequency')
+  #scale_y_continuous(limits = c(0,1))
+fake_plot
+ggsave(filename='./presentation/fakeusersvsubs.jpg',plot=fake_plot)
 
 playcount_hist <- ggplot(dcom) + aes(x = dcom$playcount) + geom_histogram(fill = 'white') + scale_y_sqrt() + scale_x_sqrt() + 
   theme(plot.background = element_rect(fill='#D20039'), 
@@ -118,7 +137,7 @@ playcount_hist <- ggplot(dcom) + aes(x = dcom$playcount) + geom_histogram(fill =
         panel.grid.major = element_blank(),  
         panel.grid.minor = element_blank()) + 
   xlab('Playcount') + ylab('Frequency')
-playcount_hist
+#playcount_hist
 ggsave(filename= './presentation/playcount_hist.jpeg', plot=playcount_hist)
 dev.off()
 
