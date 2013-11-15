@@ -12,7 +12,7 @@ ggplot(sub1) + aes(x = sub1$registered, y = sub1$playcount, color = factor(sub1$
 subscriber <- dcom[dcom$subscriber == 1,]
 user <- dcom[dcom$subscriber == 0,]
 ggplot(subscriber) + aes(x = subscriber$registered, y = subscriber$age, color = factor(subscriber$gender), 
-                   size = subscriber$top_count1) + geom_point()
+                         size = subscriber$top_count1) + geom_point()
 
 
 
@@ -75,17 +75,17 @@ ggplot(dcom) + aes(x = dcom$friend_count, y= dcom$friend_sub, color = dcom$subsc
 
 
 final <- read.table('final_test.csv', header = TRUE, sep = ',', as.is = TRUE, na.strings = "None",
-                  comment.char = "", quote = "")
+                    comment.char = "", quote = "")
 subs <- final[final$probs > .60,]
 sorted <- subs[order(subs$probs, decreasing = TRUE) , ]
 
 f <- final[(final$rock > .1 | final$indie > .1 | final$electronic > .1 |
-            final$folk > .1 | final$jazz > .1),c('playcount','probs', 'hour_registered','top_genres')]
+              final$folk > .1 | final$jazz > .1),c('playcount','probs', 'hour_registered','top_genres')]
 f$modded <- f$top_genres
 change <- function(x){if (!(x %in% c('rock', 'indie', 'electronic')) 'other' else x}
 f$modded <- sapply(f$top_genre, change)
 f <- sorted[((sorted$top_genres == 'rock' | sorted$top_genres == 'indie' | sorted$top_genres == 'electronic')&
-              (sorted$avg_diff_hours <1000)), c('playcount','probs', 'avg_diff_hours','top_genres')]
+               (sorted$avg_diff_hours <1000)), c('playcount','probs', 'avg_diff_hours','top_genres')]
 melted <- melt(data=f, id.vars=c('playcount', 'probs', 'use_diff_days'))
 
 ggplot(f) + aes(x = f$avg_diff_hours, y = f$playcount, size = f$probs, color = f$top_genres) + geom_jitter() +
@@ -98,9 +98,9 @@ ggplot(final) + aes(x = final$playcount, y = final$age, size = final$probs, colo
   scale_x_log10()
 ggplot(final) + aes(x = final$hour_registered, y = final$probs, color = factor(final$subscriber)) + 
   geom_point()#,  size = final$probs,) + geom_jitter() #+
-  #scale_x_log10()
-  
-counts <- as.data.frame(table(dcom$subscriber))]
+#scale_x_log10()
+
+counts <- as.data.frame(table(dcom$subscriber))
 counts$Var1 <- c('User', 'Subscriber')
 count_plot <- ggplot(counts) + aes(x = counts$Var1, y=counts$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
   theme(plot.background = element_rect(fill='#D20039'), 
@@ -108,7 +108,10 @@ count_plot <- ggplot(counts) + aes(x = counts$Var1, y=counts$Freq) + geom_bar(st
         panel.grid.major.x = element_blank(),
         axis.text=element_text(colour="white"), 
         axis.title.y = element_text(color = 'white'), 
-        panel.border = element_blank()) + 
+        panel.border = element_blank(),
+        axis.text.x = element_text(vjust = 1, size=20),
+        axis.text.y = element_text(hjust = 1),
+        axis.title = element_text(color = 'white', face = 'bold',size=20))+ 
   xlab('') + ylab('Frequency')
 count_plot
 ggsave(filename='./presentation/uservsubs.jpg',plot=count_plot)
@@ -122,22 +125,29 @@ fake_plot <- ggplot(fake) + aes(x = fake$Var1, y=fake$Freq) + geom_bar(stat = 'i
         panel.grid.major.x = element_blank(),
         axis.text=element_text(colour="white"), 
         axis.title.y = element_text(color = 'white'), 
-        panel.border = element_blank()) + 
+        panel.border = element_blank(),
+        axis.text.x = element_text(vjust = 1,size=20),
+        axis.text.y = element_text(hjust = 1),
+        axis.title = element_text(color = 'white', face = 'bold',size=20)) + 
   xlab('') + ylab('Frequency')
-  #scale_y_continuous(limits = c(0,1))
+#scale_y_continuous(limits = c(0,1))
 fake_plot
 ggsave(filename='./presentation/fakeusersvsubs.jpg',plot=fake_plot)
+dev.off()
 
-playcount_hist <- ggplot(dcom) + aes(x = dcom$playcount) + geom_histogram(fill = 'white') + scale_y_sqrt() + scale_x_sqrt() + 
+playcount_hist <- ggplot(dcom[dcom$playcount >= 1,]) + aes(x = dcom[dcom$playcount >= 1,'playcount']) + 
+  geom_histogram(fill = 'white') + scale_y_sqrt() + scale_x_sqrt() + 
   theme(plot.background = element_rect(fill='#D20039'), 
         panel.border = element_blank(),
         panel.background = element_rect(fill='#D20039'),
         axis.text=element_text(colour="white"), 
         axis.title = element_text(color = 'white', face = 'bold',size=20), 
         panel.grid.major = element_blank(),  
-        panel.grid.minor = element_blank()) + 
-  xlab('Playcount') + ylab('Frequency')
-#playcount_hist
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(vjust = 1),
+        axis.text.y = element_text(hjust = 1)) + 
+  xlab('Square Root Playcount') + ylab('Square Root Frequency')
+playcount_hist
 ggsave(filename= './presentation/playcount_hist.jpeg', plot=playcount_hist)
 dev.off()
 
@@ -146,16 +156,19 @@ regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcoun
                         panel.background = element_rect(fill='#D20039'),
                         panel.border = element_blank(),
                         axis.text=element_text(colour="white"), 
-                        axis.title = element_text(color = "white"),
+                        axis.title = element_text(color = 'white', face = 'bold',size=15),
                         legend.background = element_rect(fill = '#D20039'),
                         legend.key = element_rect(fill = '#D20039', color = '#D20039'),
-                        legend.text = element_text(color = 'white'),
-                        legend.title = element_blank()) +
-  scale_color_manual(values = c('black', 'white')) + 
-  xlab('Difference between Date Registered and Last Used (log(days))') + 
-  ylab('Playcount')
+                        legend.text = element_text(color = 'white', size = 20),
+                        legend.title = element_blank(),
+                        #legend.position = c(.2,.8),
+                        axis.text.x = element_text(vjust = 1),
+                        axis.text.y = element_text(hjust = 1)) +
+  scale_color_manual(values = c('black', 'white'),
+                     labels = c('User', 'Subscriber')) + 
+  xlab('Log Days Since Registered ') + 
+  ylab('Log Playcount')
 regvplaycount
 ggsave(filename = './presentation/regvplaycount.jpeg',regvplaycount)
 dev.off()
 
-  
