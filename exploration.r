@@ -93,6 +93,7 @@ ggplot(f) + aes(x = f$avg_diff_hours, y = f$playcount, size = f$probs, color = f
 
 ggplot(final) + aes(x = final$avg_diff_hours, y = final$playcount, size = final$probs, color = factor(final$subscriber)) + geom_jitter() +
   scale_x_log10()
+ggplot(final) + aes(x = final$use_diff_days, y = final$playcount, size = final$probs, color = factor(final$subscriber)) + geom_jitter() 
 ggplot(final) + aes(x = final$playcount, y = final$age, size = final$probs, color = factor(final$subscriber)) + geom_jitter() +
   scale_x_log10()
 ggplot(final) + aes(x = final$hour_registered, y = final$probs, color = factor(final$subscriber)) + 
@@ -101,7 +102,39 @@ ggplot(final) + aes(x = final$hour_registered, y = final$probs, color = factor(f
   
 counts <- as.data.frame(table(dcom$subscriber))
 counts$Var1 <- c('User', 'Subscriber')
-ggplot(counts) + aes(x = counts$Var1, y=counts$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
+count_plot <- ggplot(counts) + aes(x = counts$Var1, y=counts$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
   theme(plot.background = element_rect(fill='#D20039'), panel.background = element_rect(fill='#D20039'),
-        axis.text=element_text(colour="white"), axis.title.y = element_text(color = 'white')) + xlab('') + ylab('Frequency')
+        axis.text=element_text(colour="white"), axis.title.y = element_text(color = 'white'), panel.border = theme_blank()) + 
+  xlab('') + ylab('Frequency')
+ggsave(filename='./presentation/uservsubs.jpg',plot=count_plot)
+dev.off()
 
+playcount_hist <- ggplot(dcom) + aes(x = dcom$playcount) + geom_histogram(fill = 'white') + scale_y_sqrt() + scale_x_sqrt() + 
+  theme(plot.background = element_rect(fill='#D20039'), 
+        panel.background = element_rect(fill='#D20039'),
+        axis.text=element_text(colour="white"), 
+        axis.title = element_text(color = 'white'), 
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank()) + 
+  xlab('Playcount') + ylab('Frequency')
+playcount_hist
+ggsave(filename= './presentation/playcount_hist.jpeg', plot=playcount_hist)
+dev.off()
+
+regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcount, size = final$probs, color = factor(final$subscriber)) +
+  geom_jitter() + theme(plot.background = element_rect(fill='#D20039'), 
+                        panel.background = element_rect(fill='#D20039'),
+                        axis.text=element_text(colour="white"), 
+                        axis.title = element_text(color = "white"),
+                        legend.background = element_rect(fill = '#D20039'),
+                        legend.key = element_rect(fill = '#D20039', color = '#D20039'),
+                        legend.text = element_text(color = 'white'),
+                        legend.title = element_blank()) +
+  scale_color_manual(values = c('black', 'white')) + 
+  xlab('Difference between Date Registered and Last Used (log(days))') + 
+  ylab('Playcount')
+regvplaycount
+ggsave(filename = './presentation/regvplaycount.jpeg',regvplaycount)
+dev.off()
+
+  
