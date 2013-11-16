@@ -148,7 +148,7 @@ playcount_hist <- ggplot(dcom[dcom$playcount >= 1,]) + aes(x = dcom[dcom$playcou
         axis.text.y = element_text(hjust = 1)) + 
   xlab('Square Root Playcount') + ylab('Square Root Frequency')
 playcount_hist
-ggsave(filename= './presentation/playcount_hist.jpeg', plot=playcount_hist)
+ggsave(filename= './presentation/playcount_hist.jpg', plot=playcount_hist)
 dev.off()
 
 regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcount, size = final$probs, color = factor(final$subscriber)) +
@@ -156,10 +156,10 @@ regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcoun
                         panel.background = element_rect(fill='#D20039'),
                         panel.border = element_blank(),
                         axis.text=element_text(colour="white"), 
-                        axis.title = element_text(color = 'white', face = 'bold',size=15),
+                        axis.title = element_text(color = 'white', face = 'bold',size=20),
                         legend.background = element_rect(fill = '#D20039'),
                         legend.key = element_rect(fill = '#D20039', color = '#D20039'),
-                        legend.text = element_text(color = 'white', size = 20),
+                        legend.text = element_text(color = 'white', size = 15),
                         legend.title = element_blank(),
                         #legend.position = c(.2,.8),
                         axis.text.x = element_text(vjust = 1),
@@ -169,6 +169,6 @@ regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcoun
   xlab('Log Days Since Registered ') + 
   ylab('Log Playcount')
 regvplaycount
-ggsave(filename = './presentation/regvplaycount.jpeg',regvplaycount)
+ggsave(filename = './presentation/regvplaycount.jpg',regvplaycount)
 dev.off()
 
