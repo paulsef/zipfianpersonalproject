@@ -9,3 +9,4 @@ ssvout/
 jsonout/
 paulsef_new_ca.pem
 encoder.pkl
+flaskapp/final_df.pkl

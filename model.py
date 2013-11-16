@@ -160,7 +160,7 @@ def scrub(dataframe, to_drop = None, to_keep = None):
 	tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
 			'top_count4','top_count5']
 	d = logtransform(d, to_transform = tolog)
-	return d, top_genres
+	return d, top_genres, user_names
 
 def reshape(dataframe, to_drop = None, to_keep = None):
 	genres = []
@@ -231,14 +231,15 @@ def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 		train = dencode(train)
 		test = dencode(test)
 	else:
-		scrubbed, top_genres = scrub(df1, to_drop, to_keep)
+		scrubbed, top_genres, names = scrub(df1, to_drop, to_keep)
 		ramsam = random.sample(list(scrubbed.index), len(scrubbed.index))
 		break_point = int(len(ramsam)*.7)
 		train_index = ramsam[0:break_point]
 		test_index = ramsam[break_point:]
-		# report the top genres
+		# report the top genres and names for the test set
 		top_train_genres = top_genres.ix[train_index]
 		top_test_genres = top_genres.ix[test_index]
+		test_names = names.ix[test_index]
 		# extract the target variables
 		targets = scrubbed.ix[train_index, 'subscriber']
 		solutions = scrubbed.ix[test_index, 'subscriber']
@@ -254,7 +255,7 @@ def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 		normtrain = pd.DataFrame(normtrain, index = train_index, columns = scrubbed.columns)
 		normtest = pd.DataFrame(normtest, index = test_index, columns = scrubbed.columns)
 	pickle.dump(norm,file('standarizer.pkl', 'w'))
-	return normtrain, targets, normtest, solutions, test, top_test_genres
+	return normtrain, targets, normtest, solutions, test, top_test_genres, test_names
 
 def balance(n, train, target):
 	subscriber_index = target[target == 1].index
@@ -311,7 +312,7 @@ def print_tree():
 
 def main():
 	# load the data
-	normtrain, targets, normtest, solutions, test, top_test_genres = data()
+	normtrain, targets, normtest, solutions, test, top_test_genres, test_names = data()
 	# undersample
 	under_train, under_target = balance(1, normtrain, targets)
 	# if something terrible happened
@@ -330,6 +331,7 @@ def main():
 	test['top_genres'] = list(top_test_genres)
 	test['subscriber'] = list(solutions)
 	test['user_id'] = list(test.index)
+	test['names'] = list(test_names)
 	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
 	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
 	# 	'id'])
