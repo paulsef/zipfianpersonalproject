@@ -21,7 +21,8 @@ def slice_df():
 	final_df = pickle.load(file('final_df.pkl'))
 	#pdb.set_trace()
 	sliced = final_df[final_df['playcount'] > condition1]
-	return str(list(sliced['playcount']))
+	output1 = zip(list(sliced['playcount']), list(sliced.index))
+	return flask.render_template('list.html', output1 = output1)
 
 
 

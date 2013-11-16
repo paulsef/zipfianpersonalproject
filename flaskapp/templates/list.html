@@ -1,0 +1,16 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Results</title>
+</head>
+<body>
+    <ul id="outputlist">
+    {% for playcount, id in output1 %}
+        <li>{{playcount}}, {{id}}</li>
+    {% endfor %}
+    </ul>
+
+    <h1>My Webpage</h1>
+    {{ some_other }}
+</body>
+</html>

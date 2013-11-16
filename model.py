@@ -156,7 +156,7 @@ def scrub(dataframe, to_drop = None, to_keep = None):
 	d = nas(dataframe)#, presence)
 	d = time(d)
 	#d = drop(d, to_drop)
-	d, top_genres = reshape(d, to_drop, to_keep)
+	d, top_genres, user_names = reshape(d, to_drop, to_keep)
 	tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
 			'top_count4','top_count5']
 	d = logtransform(d, to_transform = tolog)
@@ -168,6 +168,7 @@ def reshape(dataframe, to_drop = None, to_keep = None):
 	colset2 = ['top_count1', 'top_count2','top_count3', 'top_count4','top_count5']
 	zipped = zip(colset1, colset2)
 	top_genres = dataframe['tag1']
+	user_names = dataframe['name']
 	for col1, col2 in zipped:
 		genres += list(dataframe[col1])
 	unique_genres = list(set(genres))
@@ -205,7 +206,7 @@ def reshape(dataframe, to_drop = None, to_keep = None):
 	if to_keep:
 		to_drop = list(set(list(z.columns)) - set(to_keep))
 		z = drop(z, to_drop)
-	return z, top_genres
+	return z, top_genres, user_names
 
 def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 	'''
@@ -217,7 +218,10 @@ def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 	df1 = df1.append(pd.read_csv('ssvout/15000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/20000.ssv', na_values='None'), ignore_index = True)
 	df1 = df1.append(pd.read_csv('ssvout/25000.ssv', na_values='None'), ignore_index = True)
-	df1 = df1.drop_duplicates(cols = 'id', take_last = True)
+	if len(set(list(df1.index))) > 0:
+		print 'dropping found duplicates'
+		df1 = df1.drop_duplicates(cols = 'id', take_last = True)
+	df1.index = df1.ids
 	# create a random list to index the train and test set)
 	if encode:
 		train = scrub(df1.ix[train_index])
@@ -289,6 +293,22 @@ def make_predictions(dataframe, solutions, model = False):
 	sv_score = np.sum(solutions == predictions)*1.0/len(predictions)
 	return solutions, predictions, sv_score
 
+
+def print_tree():
+	to_keep = ['playcount','top_count4','top_count5','top_count2','top_count1',
+			'top_count3','avg_diff_hours','age','hour_registered','subscriber']
+	normtrain, targets, normtest, solutions, test, top_test_genres = data(to_keep = to_keep)
+	norm = pickle.load(file('standarizer.pkl'))
+	normtrain = pd.DataFrame(norm.inverse_transform(normtrain), 
+							index = normtrain.index, columns = normtrain.columns)
+	normtrain, targets = balance(1, normtrain, targets)
+	dectree = tree.DecisionTreeClassifier(min_samples_split= 10, min_samples_leaf = 2, max_depth =5)
+	dectree.fit(normtrain, targets)
+	dot_data = StringIO() 
+	tree.export_graphviz(dectree, out_file=dot_data, feature_names = normtrain.columns) 
+	graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
+	graph.write_pdf("example_tree.pdf") 
+
 def main():
 	# load the data
 	normtrain, targets, normtest, solutions, test, top_test_genres = data()
@@ -307,29 +327,14 @@ def main():
 	norm = pickle.load(file('standarizer.pkl'))
 	test = pd.DataFrame(norm.inverse_transform(test), index = test.index, columns = test.columns)
 	test['probs'] = list(probs)
-	test['ids'] = list(test.index)
 	test['top_genres'] = list(top_test_genres)
 	test['subscriber'] = list(solutions)
+	test['user_id'] = list(test.index)
 	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
 	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
 	# 	'id'])
 	test.to_csv('final_test.csv', sep = ',',index = False, na_rep = "None")
 	return test, features
-
-def print_tree():
-	to_keep = ['playcount','top_count4','top_count5','top_count2','top_count1',
-			'top_count3','avg_diff_hours','age','hour_registered','subscriber']
-	normtrain, targets, normtest, solutions, test, top_test_genres = data(to_keep = to_keep)
-	norm = pickle.load(file('standarizer.pkl'))
-	normtrain = pd.DataFrame(norm.inverse_transform(normtrain), 
-							index = normtrain.index, columns = normtrain.columns)
-	normtrain, targets = balance(1, normtrain, targets)
-	dectree = tree.DecisionTreeClassifier(min_samples_split= 10, min_samples_leaf = 2, max_depth =5)
-	dectree.fit(normtrain, targets)
-	dot_data = StringIO() 
-	tree.export_graphviz(dectree, out_file=dot_data, feature_names = normtrain.columns) 
-	graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
-	graph.write_pdf("example_tree.pdf") 
 
 
 if __name__ == '__main__':
