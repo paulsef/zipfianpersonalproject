@@ -94,7 +94,7 @@ def flatten_userinfo(entry, master):
 		if key == 'registered':
 			info_dict[key] = info_dict[key]['unixtime']
 	# delte irrelevant thingssss
-	for delete in ['type','url','bootstrap','realname']:#'name']:	
+	# for delete in ['type','url','bootstrap','realname']:#'name':	
 		del info_dict[delete]
 	master.update(info_dict)
 	return master
