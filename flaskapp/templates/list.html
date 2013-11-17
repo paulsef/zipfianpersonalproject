@@ -5,8 +5,9 @@
 </head>
 <body>
     <ul id="outputlist">
-    {% for playcount, id in output1 %}
-        <li>{{playcount}}, {{id}}</li>
+    {% for dict in output1 %}
+        <li>{{dict.playcount}}, {{dict.name}}, 
+        	{{dict.image_ref}}, {{dict.probability}}</li>
     {% endfor %}
     </ul>
 
