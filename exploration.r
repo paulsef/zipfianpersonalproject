@@ -159,13 +159,16 @@ regvplaycount <- ggplot(final) + aes(x = final$use_diff_days, y = final$playcoun
                         axis.title = element_text(color = 'white', face = 'bold',size=20),
                         legend.background = element_rect(fill = '#D20039'),
                         legend.key = element_rect(fill = '#D20039', color = '#D20039'),
-                        legend.text = element_text(color = 'white', size = 15),
-                        legend.title = element_blank(),
+                        legend.text = element_text(color = 'white', size = 12),
+                        legend.title = element_text(color = 'white', size = 15),
                         #legend.position = c(.2,.8),
                         axis.text.x = element_text(vjust = 1),
                         axis.text.y = element_text(hjust = 1)) +
-  scale_color_manual(values = c('black', 'white'),
-                     labels = c('User', 'Subscriber')) + 
+  scale_color_manual(name = 'Actual Type',
+                    values = c('black', 'white'),
+                    labels = c('User', 'Subscriber')) +
+  scale_size_continuous(name = 'Probability') + 
+  scale_x_log10()+
   xlab('Log Days Since Registered ') + 
   ylab('Log Playcount')
 regvplaycount

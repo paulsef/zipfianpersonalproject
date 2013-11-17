@@ -131,15 +131,21 @@ def drop(dataframe, dropcolumns):
 	d = dataframe.drop(dropcolumns, axis = 1)
 	return d
 
-def logtransform(dataframe, to_transform = []):
+def logtransform(dataframe, to_transform = [], unlog = False):
 	'''
 	takes the log transform of certain variables in the dataset
 	'''
+	if not to_transform:
+		to_transform = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
+			'top_count4','top_count5']
 	for col in to_transform:
 		try:
 			if np.min(dataframe[col]) <= 0:
 					dataframe[col] = dataframe[col] + (-1 * np.min(dataframe[col])) + 1
-			dataframe[col] = np.log(dataframe[col])
+			if unlog:
+				dataframe[col] = np.exp(dataframe[col])
+			else:
+				dataframe[col] = np.log(dataframe[col])
 		except(KeyError):
 			continue
 	#scrubbed['playcount'] = np.log(scrubbed['playcount'] + 2)
@@ -157,9 +163,9 @@ def scrub(dataframe, to_drop = None, to_keep = None):
 	d = time(d)
 	#d = drop(d, to_drop)
 	d, top_genres, user_names = reshape(d, to_drop, to_keep)
-	tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
-			'top_count4','top_count5']
-	d = logtransform(d, to_transform = tolog)
+	#tolog = ['playcount', 'use_diff_days', 'top_count1','top_count2', 'top_count3',
+	#		'top_count4','top_count5']
+	d = logtransform(d)#, to_transform = tolog)
 	return d, top_genres, user_names
 
 def reshape(dataframe, to_drop = None, to_keep = None):
@@ -221,7 +227,7 @@ def data(to_drop = None, to_keep = None, encode = False, reencode = False):
 	if len(set(list(df1.index))) > 0:
 		print 'dropping found duplicates'
 		df1 = df1.drop_duplicates(cols = 'id', take_last = True)
-	df1.index = df1.ids
+	df1.index = df1['id']
 	# create a random list to index the train and test set)
 	if encode:
 		train = scrub(df1.ix[train_index])
@@ -332,9 +338,11 @@ def main():
 	test['subscriber'] = list(solutions)
 	test['user_id'] = list(test.index)
 	test['names'] = list(test_names)
+	test = logtransform(test, unlog = True)
 	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
 	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
 	# 	'id'])
+	pickle.dump(test, file('flaskapp/final_df.pkl', 'w'))
 	test.to_csv('final_test.csv', sep = ',',index = False, na_rep = "None")
 	return test, features
 

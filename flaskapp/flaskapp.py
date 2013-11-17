@@ -10,8 +10,7 @@ def say_hello():
 
 @app.route('/slicedf', methods = ['Get', 'Post'])
 def slice_df():
-	x = flask.request.form
-	print x
+	flask.request.form.keys()
 	condition1 = flask.request.form['condition1']
 	#pdb.set_trace()
 	try:
