@@ -339,6 +339,7 @@ def main():
 	test['user_id'] = list(test.index)
 	test['names'] = list(test_names)
 	test = logtransform(test, unlog = True)
+	test = test.sort('probs', ascending = False)
 	# test = pd.melt(test, id_vars = ['playcount', 'avg_diff_hours','top_count1', 'top_count2',
 	# 	'top_count3', 'top_count4','top_count5', 'hour_registered', 'use_diff_days', 'probs',
 	# 	'id'])

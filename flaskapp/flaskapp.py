@@ -8,17 +8,17 @@ app = flask.Flask(__name__)
 def say_hello():
 	return flask.redirect(flask.url_for('static', filename = 'landing.html'))
 
-@app.route('/slicedf', methods = ['Get', 'Post'])
+@app.route('/slicedf', methods = ['Post'])
 def slice_df():
-	flask.request.form.keys()
-	condition1 = flask.request.form['condition1']
-	#pdb.set_trace()
+	#flask.request.form.keys()
+	condition1 = flask.request.form['playcount']
+	condition2 = flask.request.form['age']
 	try:
-		condition1 = int(flask.request.form['condition1'])
+		condition1 = int(condition1)
+		condition2 = int(condition2)
 	except:
 		return str(condition1) +  ' was not an integer'
 	final_df = pickle.load(file('final_df.pkl'))
-	#pdb.set_trace()
 	sliced = final_df[final_df['playcount'] > condition1]
 	output= []
 	for i in range(10):
