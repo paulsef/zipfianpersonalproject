@@ -10,18 +10,19 @@ def say_hello():
 
 @app.route('/slicedf', methods = ['Post'])
 def slice_df():
-	#flask.request.form.keys()
-	condition1 = flask.request.form['playcount']
-	condition2 = flask.request.form['age']
-	try:
-		condition1 = int(condition1)
-		condition2 = int(condition2)
-	except:
-		return str(condition1) +  ' was not an integer'
+	playcount, top_count = flask.request.form['playcount'], flask.request.form['top_count']
+	avg_diff_hours, age = flask.request.form['avg_diff_hours'], flask.request.form['age']
+	hour_registered, genre = flask.request.form['hour_registered'], flask.request.form['genre']
 	final_df = pickle.load(file('final_df.pkl'))
-	sliced = final_df[final_df['playcount'] > condition1]
+	sliced, errors = userinfo.slice_all(final_df, playcount, top_count, avg_diff_hours, age, hour_registered, genre)
+	if sliced.shape[0] == 0:
+		return 'no user met the search critera' + str(errors)
+	elif sliced.shape[0] < 5:
+		x = sliced.shape[0]
+	else:
+		x = 5
 	output= []
-	for i in range(10):
+	for i in range(x):
 		user_dict = {}
 		index = sliced.index[i]
 		user_dict['playcount'] = sliced['playcount'][index]
