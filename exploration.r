@@ -118,7 +118,7 @@ ggsave(filename='./presentation/uservsubs.jpg',plot=count_plot)
 dev.off()
 
 fake <- counts
-fake$Freq <- c(604,604)
+fake$Freq <- c(1700,1700)
 fake_plot <- ggplot(fake) + aes(x = fake$Var1, y=fake$Freq) + geom_bar(stat = 'identity', fill = 'white') + 
   theme(plot.background = element_rect(fill='#D20039'), 
         panel.background = element_rect(fill='#D20039'),
@@ -129,8 +129,8 @@ fake_plot <- ggplot(fake) + aes(x = fake$Var1, y=fake$Freq) + geom_bar(stat = 'i
         axis.text.x = element_text(vjust = 1,size=20),
         axis.text.y = element_text(hjust = 1),
         axis.title = element_text(color = 'white', face = 'bold',size=20)) + 
-  xlab('') + ylab('Frequency')
-#scale_y_continuous(limits = c(0,1))
+  xlab('') + ylab('Frequency') + 
+  scale_y_continuous(limits = c(0,11500)) + 
 fake_plot
 ggsave(filename='./presentation/fakeusersvsubs.jpg',plot=fake_plot)
 dev.off()
