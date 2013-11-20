@@ -98,7 +98,7 @@ def slice_all(dataframe, playcount, top_count,avg_diff_hours, age, hour_register
 	dataframe = slice_avg_diff_hours(dataframe, avg_diff_hours, greater_than = True)
 	dataframe = slice_age(dataframe, age, greater_than = True)
 	if hour_registered:
-		dataframe = slice_hour_reg(dataframe, hour_registered, greater_than = True)
+		dataframe = slice_hour_reg(dataframe, hour_registered)
 	if genre:
 		dataframe =  slice_genre(dataframe, genre)
 	return dataframe, errors

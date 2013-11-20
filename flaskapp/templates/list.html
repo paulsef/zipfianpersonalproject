@@ -4,14 +4,15 @@
     <title>Results</title>
 </head>
 <body>
+	<h1>My Webpage</h1>
     <ul id="outputlist">
     {% for dict in output1 %}
-        <li>{{dict.playcount}}, {{dict.name}}, 
-        	{{dict.image_ref}}, {{dict.probability}}</li>
+        <li>
+        	<h3>{{dict.image_ref|safe}} {{dict.name}}</h3> has <strong>{{dict.playcount}}</strong> plays
+        	and according to the model a probability of <strong>{{dict.probability}}</strong>
+        	of subscribing.
+        </li>
     {% endfor %}
     </ul>
-
-    <h1>My Webpage</h1>
-    {{ some_other }}
 </body>
 </html>
