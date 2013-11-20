@@ -2,17 +2,31 @@
 <html lang="en">
 <head>
     <title>Results</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+    <style>
+    	body {
+    		background: #DB264C;
+    		color: white;
+    	}
+    	h3 a{
+    		color:white;
+    	}
+    	h3 a:hover {
+    		color: #ddd;
+    	}
+    </style>
 </head>
 <body>
-	<h1>My Webpage</h1>
+	<img src="../static/header.png" style="width:600px">
     <ul id="outputlist">
     {% for dict in output1 %}
         <li>
-        	<h3>{{dict.image_ref|safe}} {{dict.name}}</h3> has <strong>{{dict.playcount}}</strong> plays
+        	<h3 >{{dict.image_ref|safe}} <a href={{dict.user_url}}>{{dict.name}}</a></h3> has <strong>{{dict.playcount}}</strong> plays
         	and according to the model a probability of <strong>{{dict.probability}}</strong>
         	of subscribing.
         </li>
     {% endfor %}
     </ul>
+	</font>
 </body>
 </html>

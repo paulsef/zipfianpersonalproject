@@ -1,18 +1,67 @@
 <html>
+<head>
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+    <style>
+    	body {
+    		background: #DB264C;
+    		color: white;
+    	}
+
+    	form {
+    		width: 600px;
+    	}
+    </style>
+</head>
 <body>
-    <form method="post" action="/slicedf"> 
-        Playcount <input type ="text" name="playcount" size="30">
-    </br>
-        Top Count<input type ="text" name="top_count" size="30">
-    </br>
-    	Average Difference<input type ="text" name="avg_diff_hours" size="30">
+	<img src="header.png" style="width:600">
+    <form class="form-horizontal" method="post" action="/slicedf"> 
+    	<div class="form-group">
+    		<label class="control-label col-sm-4">Playcount</label>
+    		<div class="col-sm-8">
+    			<input class="form-control" type ="text" name="playcount" value = "0">
+    		</div>
+    	</div>
+    	<div class="form-group">
+    		<label class="control-label col-sm-4">Top-Count</label>
+    		<div class="col-sm-8">
+    			<input class="form-control" type ="text" name="top_count" value = "0">
+    		</div>
+    	</div>
+    	    	<div class="form-group">
+    		<label class="control-label col-sm-4">Days Active</label>
+    		<div class="col-sm-8">
+    			<input class="form-control" type ="text" name="avg_diff_hours" value = "0">
+    		</div>
+    	</div>
+    	    	<div class="form-group">
+    		<label class="control-label col-sm-4">Hour Registered</label>
+    		<div class="col-sm-8">
+    			<input class="form-control" type ="text" name="hour_registered" value = "None">
+    		</div>
+    	</div>
+    	<div class="form-group">
+    		<label class="control-label col-sm-4">Genre</label>
+    		<div class="col-sm-8">
+    			<input class="form-control" type ="text" name="genre" value="None">
+    		</div>
+    	</div> 
+    	<div class="form-group">
+    		<label class="control-label col-sm-4">Age</label>
+    		<div class="col-sm-8">
+    			<input class="form-control" type ="text" name="age" value="0">
+    		</div>
+    	</div>      	   	
+<!--     	Average Difference<input type ="text" name="avg_diff_hours" size="30">
     </br>
     	Age<input type ="text" name="age" size="30">
     </br>
-    	Hour Registered<input type ="text" name="hour_registered" size="30">
-    </br>
-    	Genre<input type ="text" name="genre" size="30">
-        <input type="submit" value="Submit">
+    	Hour Registered<input type ="text" name="hour_registered" size="30"> -->
+    	<div class="form-group">
+    		<label class="control-label col-sm-4"></label>
+    		<div class="col-sm-8">
+    			<input class="btn btn-warning" type ="submit" value="Submit">
+    		</div>
+    	</div>   
     </form>
 </body>
 </html>

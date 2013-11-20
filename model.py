@@ -12,7 +12,7 @@ from sklearn import tree
 from sklearn.preprocessing import Imputer, LabelEncoder, StandardScaler, Normalizer
 from sklearn.externals.six import StringIO  
 from sklearn import metrics
-import pydot
+#import pydot
 import pdb
 
 def make_encoder(test, train):
@@ -267,7 +267,7 @@ def balance(n, train, target):
 	subscriber_index = target[target == 1].index
 	user_index = target[target == 0].index
 	# randomly select users
-	chosen = sample(list(user_index), len(subscriber_index)*n)
+	chosen = sample(list(user_index), int(len(subscriber_index)*n))
 	# create a new training set with equal parts subsriber and users
 	under_trained = train.ix[list(subscriber_index) + chosen]
 	under_target = target.ix[list(subscriber_index) + list(chosen)]
