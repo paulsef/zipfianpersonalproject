@@ -130,7 +130,7 @@ fake_plot <- ggplot(fake) + aes(x = fake$Var1, y=fake$Freq) + geom_bar(stat = 'i
         axis.text.y = element_text(hjust = 1),
         axis.title = element_text(color = 'white', face = 'bold',size=20)) + 
   xlab('') + ylab('Frequency') + 
-  scale_y_continuous(limits = c(0,11500)) + 
+  scale_y_continuous(limits = c(0,11500)) 
 fake_plot
 ggsave(filename='./presentation/fakeusersvsubs.jpg',plot=fake_plot)
 dev.off()
@@ -145,8 +145,10 @@ playcount_hist <- ggplot(dcom[dcom$playcount >= 1,]) + aes(x = dcom[dcom$playcou
         panel.grid.major = element_blank(),  
         panel.grid.minor = element_blank(),
         axis.text.x = element_text(vjust = 1),
-        axis.text.y = element_text(hjust = 1)) + 
-  xlab('Square Root Playcount') + ylab('Square Root Frequency')
+        axis.text.y = element_text(hjust = 1),
+        plot.title = element_text(color = 'white', face = 'bold', size=20)) + 
+  xlab('Square Root Playcount') + ylab('Square Root Frequency') + 
+  ggtitle("Histogram of Playcount")
 playcount_hist
 ggsave(filename= './presentation/playcount_hist.jpg', plot=playcount_hist)
 dev.off()
